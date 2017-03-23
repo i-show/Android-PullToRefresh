@@ -8,14 +8,16 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 
 /**
  * Created by Bright.Yu on 2017/3/20.
  * PullToRefresh
  */
-
 public class PullToRefreshView extends ViewGroup {
+    private static final String TAG = "PullToRefreshView";
     /**
      * HeaderView
      */
@@ -29,10 +31,27 @@ public class PullToRefreshView extends ViewGroup {
      */
     private IPullToRefreshFooter mFooterView;
 
-    private ScrollerCompat mScroller;
-
+    /**
+     * 上次的位置
+     */
+    private int mMovingSum;
     private float mLastY;
-    private float mMovingSum;
+    private float mBeingDraggedY;
+
+    private float mInitialDownY;
+    private float mInitialMotionY;
+    /**
+     * 滑动距离的判断
+     */
+    private int mTouchSlop;
+
+    private boolean mIsBeingDragged;
+
+    private ScrollerCompat mScroller;
+    /**
+     * 监听
+     */
+    private OnPullToRefreshListener mPullToRefreshListener;
 
     public PullToRefreshView(Context context) {
         this(context, null);
@@ -44,6 +63,9 @@ public class PullToRefreshView extends ViewGroup {
 
     public PullToRefreshView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
+        mTouchSlop = configuration.getScaledTouchSlop() * 2;
         mScroller = ScrollerCompat.create(context);
     }
 
@@ -65,8 +87,6 @@ public class PullToRefreshView extends ViewGroup {
         if (mHeaderView != null) {
             View view = mHeaderView.getView();
             measureChild(view, widthMeasureSpec, heightMeasureSpec);
-            Log.i("nian", "onMeasure: view width = " + view.getMeasuredWidth());
-            Log.i("nian", "onMeasure: view height = " + view.getMeasuredHeight());
         }
 
     }
@@ -76,42 +96,88 @@ public class PullToRefreshView extends ViewGroup {
 
         if (mHeaderView != null) {
             View view = mHeaderView.getView();
-            view.layout(0, 0, view.getWidth(), view.getHeight());
+            view.layout(0, -view.getMeasuredHeight(), view.getMeasuredWidth(), 0);
         }
 
         if (mTargetView != null) {
-            mTargetView.layout(0, 0, getWidth(), getHeight());
+            mTargetView.layout(0, 0, getMeasuredWidth(), getMeasuredHeight());
         }
     }
 
-//    @Override
-//    public boolean dispatchTouchEvent(MotionEvent event) {
-//        if (!isEnabled() || mTargetView == null || mHeaderView == null) {
-//            return super.dispatchTouchEvent(event);
-//        }
-//
-//        return super.dispatchTouchEvent(event);
-//    }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (!isEnabled() || canScrollUp() || isRefreshing()) {
+            return false;
+        }
+
+        switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                mLastY = event.getY();
+                mIsBeingDragged = false;
+                mInitialDownY = ev.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
-                float moveY = event.getY();
-                mMovingSum += moveY - mLastY;
-                mLastY = moveY;
-                int moving = mHeaderView.moveing(this, (int) mMovingSum);
-                mTargetView.layout(0, moving, getWidth(), mTargetView.getHeight() + moving);
+                final float y = ev.getY();
+                startDragging(y);
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                mIsBeingDragged = false;
+                break;
+        }
+        return mIsBeingDragged;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (!isEnabled() || canScrollUp() || isRefreshing()) {
+            return false;
+        }
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mIsBeingDragged = false;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                final int y = (int) event.getY();
+                startDragging(y);
+                if (mIsBeingDragged) {
+                    final float offset = y - mLastY;
+                    mMovingSum = (int) (y - mBeingDraggedY);
+                    mLastY = y;
+                    final int offsetResult = mHeaderView.moving(this, mMovingSum, (int) offset);
+                    ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                }
+
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                if (mHeaderView.isEffectiveDistance(mMovingSum)) {
+                    Log.i(TAG, "onTouchEvent: getTop = " + mTargetView.getTop());
+                    mHeaderView.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
+                    int tagetOffset = mHeaderView.refreshing(this, mMovingSum);
+                    mScroller.startScroll(0, 0, 0, tagetOffset, 1000);
+                    postInvalidate();
+                    notifyRefresh();
+                }
                 break;
         }
         return true;
     }
+
+    @Override
+    public void requestDisallowInterceptTouchEvent(boolean b) {
+        // if this is a List < L or another view that doesn't support nested
+        // scrolling, ignore this request so that the vertical scroll event
+        // isn't stolen
+        if ((android.os.Build.VERSION.SDK_INT < 21 && mTargetView instanceof AbsListView)
+                || (mTargetView != null && !ViewCompat.isNestedScrollingEnabled(mTargetView))) {
+            // Nope.
+        } else {
+            super.requestDisallowInterceptTouchEvent(b);
+        }
+    }
+
 
     @SuppressWarnings("unused")
     public void setHeaderView(@NonNull IPullToRefreshHeader header) {
@@ -120,8 +186,23 @@ public class PullToRefreshView extends ViewGroup {
         }
 
         mHeaderView = header;
-        addView(header.getView());
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        addView(header.getView(), lp);
         requestLayout();
+    }
+
+    private void startDragging(float y) {
+        final float yDiff = y - mInitialDownY;
+        if (yDiff > mTouchSlop && !mIsBeingDragged) {
+            mLastY = y;
+            mInitialMotionY = mInitialDownY + mTouchSlop;
+            mIsBeingDragged = true;
+            mBeingDraggedY = y;
+        }
+    }
+
+    private boolean isRefreshing() {
+        return mHeaderView != null && mHeaderView.getStatus() == IPullToRefreshHeader.STATUS_REFRESHING;
     }
 
     @Override
@@ -146,5 +227,31 @@ public class PullToRefreshView extends ViewGroup {
      */
     private boolean canScrollDown() {
         return mTargetView != null && ViewCompat.canScrollVertically(mTargetView, 1);
+    }
+
+    public void setRefreshSuccess() {
+        mHeaderView.setStatus(IPullToRefreshHeader.STATUS_SUCCESS);
+        postInvalidate();
+    }
+
+    public void setRefreshFailed() {
+        mHeaderView.setStatus(IPullToRefreshHeader.STATUS_FAILED);
+        postInvalidate();
+    }
+
+    public void setOnPullToRefreshListener(OnPullToRefreshListener listener) {
+        mPullToRefreshListener = listener;
+    }
+
+    private void notifyRefresh() {
+        if (mPullToRefreshListener != null) {
+            mPullToRefreshListener.onRefresh(this);
+        }
+    }
+
+    private void notifyLoadMore() {
+        if (mPullToRefreshListener != null) {
+            mPullToRefreshListener.onLoadMore(this);
+        }
     }
 }

@@ -41,6 +41,8 @@ public interface IPullToRefreshHeader {
     @interface status {
     }
 
+    void init(ViewGroup parent);
+
     /**
      * 获取Header
      */
@@ -53,11 +55,37 @@ public interface IPullToRefreshHeader {
     void setStatus(@IPullToRefreshHeader.status int status);
 
     /**
+     * 获取当前状态
+     */
+    int getStatus();
+
+    /**
      * 移动
      *
-     * @param parent         父View
-     * @param movingDistance 手指移动的距离
+     * @param parent 父View
+     * @param total  总共移动了多少距离
+     * @param offset 当前事件移动的距离
      * @return header移动的距离
      */
-    int moveing(ViewGroup parent, int movingDistance);
+    int moving(ViewGroup parent, final int total, final int offset);
+
+    /**
+     * 刷新中....
+     */
+    int refreshing(ViewGroup parent, final int total);
+
+    /**
+     * 获取下拉的最大高度
+     */
+    int getMaxPullDownHeight();
+
+    /**
+     * 获取Header的高度
+     */
+    int getHeaderHeight();
+
+    /**
+     * 判断当前移动距离是否是有效距离
+     */
+    boolean isEffectiveDistance(int movingDistance);
 }
