@@ -4,11 +4,13 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.ishow.pulltorefresh.IPullToRefreshHeader;
+import com.ishow.pulltorefresh.utils.ViewHelper;
 
 /**
  * Created by Bright.Yu on 2017/3/22.
@@ -73,8 +75,14 @@ public class TestHeader extends android.support.v7.widget.AppCompatTextView impl
 
     @Override
     public int moving(ViewGroup parent, final int total, final int offset) {
+        Log.i("nian", "moving: offset = " + offset);
+        Log.i("nian", "movig: getTop = " + getTop());
         if (total >= getMaxPullDownHeight()) {
             return 0;
+        } else if (getTop() + offset < -getHeaderHeight()) {
+            int ajust = getHeaderHeight() + getTop();
+            ViewCompat.offsetTopAndBottom(this, ajust);
+            return ajust;
         } else {
             ViewCompat.offsetTopAndBottom(this, offset);
             return offset;
@@ -82,14 +90,38 @@ public class TestHeader extends android.support.v7.widget.AppCompatTextView impl
 
     }
 
+
     @Override
     public int refreshing(ViewGroup parent, int total) {
-        return getTop();
+        int offset = -getTop();
+        ViewHelper.movingY(this, offset);
+        return offset;
+    }
+
+    @Override
+    public int cancelRefresh(ViewGroup parent) {
+        int offset = -getTop() - getHeaderHeight();
+        ViewHelper.movingY(this, offset);
+        return offset;
+    }
+
+    @Override
+    public int refreshSuccess(ViewGroup parent) {
+        int offset = -getHeaderHeight();
+        ViewHelper.movingY(this, offset);
+        return offset;
+    }
+
+    @Override
+    public int refreshFailed(ViewGroup parent) {
+        int offset = -getHeaderHeight();
+        ViewHelper.movingY(this, offset);
+        return offset;
     }
 
     @Override
     public int getMaxPullDownHeight() {
-        return (getMeasuredHeight() * 5);
+        return (getMeasuredHeight() * 6);
     }
 
     @Override

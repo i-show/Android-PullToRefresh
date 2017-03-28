@@ -3,14 +3,14 @@ package com.ishow.pulltorefresh;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
-import android.support.v4.widget.ScrollerCompat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+
+import com.ishow.pulltorefresh.utils.ViewHelper;
 
 /**
  * Created by Bright.Yu on 2017/3/20.
@@ -39,7 +39,6 @@ public class PullToRefreshView extends ViewGroup {
     private float mBeingDraggedY;
 
     private float mInitialDownY;
-    private float mInitialMotionY;
     /**
      * 滑动距离的判断
      */
@@ -47,7 +46,6 @@ public class PullToRefreshView extends ViewGroup {
 
     private boolean mIsBeingDragged;
 
-    private ScrollerCompat mScroller;
     /**
      * 监听
      */
@@ -66,7 +64,6 @@ public class PullToRefreshView extends ViewGroup {
 
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop() * 2;
-        mScroller = ScrollerCompat.create(context);
     }
 
 
@@ -153,12 +150,14 @@ public class PullToRefreshView extends ViewGroup {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 if (mHeaderView.isEffectiveDistance(mMovingSum)) {
-                    Log.i(TAG, "onTouchEvent: getTop = " + mTargetView.getTop());
                     mHeaderView.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
-                    int tagetOffset = mHeaderView.refreshing(this, mMovingSum);
-                    mScroller.startScroll(0, 0, 0, tagetOffset, 1000);
-                    postInvalidate();
+                    int offset = mHeaderView.refreshing(this, mMovingSum);
+                    ViewHelper.movingY(mTargetView, offset);
                     notifyRefresh();
+                } else {
+                    mHeaderView.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+                    int offset = mHeaderView.cancelRefresh(this);
+                    ViewHelper.movingY(mTargetView, offset);
                 }
                 break;
         }
@@ -195,7 +194,6 @@ public class PullToRefreshView extends ViewGroup {
         final float yDiff = y - mInitialDownY;
         if (yDiff > mTouchSlop && !mIsBeingDragged) {
             mLastY = y;
-            mInitialMotionY = mInitialDownY + mTouchSlop;
             mIsBeingDragged = true;
             mBeingDraggedY = y;
         }
@@ -205,14 +203,6 @@ public class PullToRefreshView extends ViewGroup {
         return mHeaderView != null && mHeaderView.getStatus() == IPullToRefreshHeader.STATUS_REFRESHING;
     }
 
-    @Override
-    public void computeScroll() {
-        if (mScroller.computeScrollOffset()) {
-            scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
-            postInvalidate();
-        }
-        super.computeScroll();
-    }
 
     /**
      * 是否可以上滑
@@ -231,7 +221,8 @@ public class PullToRefreshView extends ViewGroup {
 
     public void setRefreshSuccess() {
         mHeaderView.setStatus(IPullToRefreshHeader.STATUS_SUCCESS);
-        postInvalidate();
+        int offset = mHeaderView.refreshSuccess(this);
+        ViewHelper.movingY(mTargetView, offset);
     }
 
     public void setRefreshFailed() {
@@ -254,4 +245,5 @@ public class PullToRefreshView extends ViewGroup {
             mPullToRefreshListener.onLoadMore(this);
         }
     }
+
 }

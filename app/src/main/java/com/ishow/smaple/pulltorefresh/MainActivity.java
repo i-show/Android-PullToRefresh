@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
         header.setBackgroundColor(Color.GREEN);
         header.setText("Header");
 
+
         final PullToRefreshView pullToRefreshView = (PullToRefreshView) findViewById(R.id.pulltorefresh);
         pullToRefreshView.setHeaderView(header);
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         pullToRefreshView.setRefreshSuccess();
                     }
-                }, 6000);
+                }, 3000);
             }
 
             @Override
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
         recyclerView.setAdapter(new TestAdapter(this));
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-    }
 
+    }
 
 }

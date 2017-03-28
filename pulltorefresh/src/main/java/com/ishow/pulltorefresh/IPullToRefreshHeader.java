@@ -75,6 +75,21 @@ public interface IPullToRefreshHeader {
     int refreshing(ViewGroup parent, final int total);
 
     /**
+     * 取消刷新
+     */
+    int cancelRefresh(ViewGroup parent);
+
+    /**
+     * 刷新成功
+     */
+    int refreshSuccess(ViewGroup parent);
+
+    /**
+     * 刷新失败
+     */
+    int refreshFailed(ViewGroup parent);
+
+    /**
      * 获取下拉的最大高度
      */
     int getMaxPullDownHeight();
