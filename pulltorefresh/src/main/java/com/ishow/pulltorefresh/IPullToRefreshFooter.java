@@ -1,6 +1,8 @@
 package com.ishow.pulltorefresh;
 
 import android.support.annotation.IntDef;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -23,14 +25,58 @@ public interface IPullToRefreshFooter {
      * 加载状态
      */
     int STATUS_LOADING = 2;
+    /**
+     * 全部加载完毕
+     */
+    int STATUS_END = 3;
 
-    @IntDef({STATUS_NORMAL, STATUS_READY, STATUS_LOADING})
+    @IntDef({STATUS_NORMAL, STATUS_READY, STATUS_LOADING, STATUS_END})
     @Retention(RetentionPolicy.SOURCE)
     @interface status {
     }
+
+    void init();
 
     /**
      * 设置状态
      */
     void setStatus(@IPullToRefreshFooter.status int status);
+
+    /**
+     * 获取当前状态
+     */
+    int getStatus();
+
+
+    /**
+     * 移动
+     *
+     * @param parent 父View
+     * @param total  总共移动了多少距离
+     * @param offset 当前事件移动的距离
+     * @return header移动的距离
+     */
+    int moving(ViewGroup parent, final int total, final int offset);
+
+    /**
+     * 刷新中....
+     */
+    int loading(ViewGroup parent, View targetView, final int total);
+
+    /**
+     * 取消刷新
+     */
+    int cancelLoadMore(ViewGroup parent, View targetView);
+
+    /**
+     * 刷新成功
+     */
+    int loadSuccess(ViewGroup parent);
+
+
+    /**
+     * 判断当前移动距离是否是有效距离
+     */
+    boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance);
+
 }

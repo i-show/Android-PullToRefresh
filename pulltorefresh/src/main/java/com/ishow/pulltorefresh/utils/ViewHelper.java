@@ -1,5 +1,6 @@
 package com.ishow.pulltorefresh.utils;
 
+import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
@@ -18,15 +19,24 @@ public class ViewHelper {
 
     public static void movingY(final @NonNull View view, int distance) {
         int duration = calculatingDuration(distance);
-        movingY(view, duration, distance);
+        movingY(view, duration, distance, null);
     }
 
     @SuppressWarnings("WeakerAccess")
-    public static void movingY(final @NonNull View view, @IntRange(from = 1) int duration, int distance) {
+    public static void movingY(final @NonNull View view, int distance, Animator.AnimatorListener listener) {
+        int duration = calculatingDuration(distance);
+        movingY(view, duration, distance, listener);
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public static void movingY(final @NonNull View view, @IntRange(from = 1) int duration, int distance, Animator.AnimatorListener listener) {
         view.setTag(R.id.tag_pull_to_refresh_moving_y, 0);
         ValueAnimator animator = ValueAnimator.ofInt(distance);
         animator.setTarget(view);
         animator.setDuration(duration);
+        if (listener != null) {
+            animator.addListener(listener);
+        }
         animator.start();
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override

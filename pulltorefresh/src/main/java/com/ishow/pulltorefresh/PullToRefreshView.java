@@ -1,6 +1,8 @@
 package com.ishow.pulltorefresh;
 
+import android.animation.Animator;
 import android.content.Context;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
@@ -19,9 +21,13 @@ import com.ishow.pulltorefresh.utils.ViewHelper;
 public class PullToRefreshView extends ViewGroup {
     private static final String TAG = "PullToRefreshView";
     /**
+     * 设置了时间的时候进行配置一个时间间隔
+     */
+    private static final int ANI_INTERVAL = 800;
+    /**
      * HeaderView
      */
-    private IPullToRefreshHeader mHeaderView;
+    private IPullToRefreshHeader mHeader;
     /**
      * TargetView
      */
@@ -29,7 +35,7 @@ public class PullToRefreshView extends ViewGroup {
     /**
      * FooterView
      */
-    private IPullToRefreshFooter mFooterView;
+    private IPullToRefreshFooter mFooter;
 
     /**
      * 上次的位置
@@ -51,6 +57,8 @@ public class PullToRefreshView extends ViewGroup {
      */
     private OnPullToRefreshListener mPullToRefreshListener;
 
+    private Handler mHandler;
+
     public PullToRefreshView(Context context) {
         this(context, null);
     }
@@ -64,6 +72,7 @@ public class PullToRefreshView extends ViewGroup {
 
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop() * 2;
+        mHandler = new Handler();
     }
 
 
@@ -79,10 +88,21 @@ public class PullToRefreshView extends ViewGroup {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        mHandler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (mHeaderView != null) {
-            View view = mHeaderView.getView();
+        if (mHeader != null) {
+            View view = mHeader.getView();
             measureChild(view, widthMeasureSpec, heightMeasureSpec);
         }
 
@@ -91,8 +111,8 @@ public class PullToRefreshView extends ViewGroup {
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
 
-        if (mHeaderView != null) {
-            View view = mHeaderView.getView();
+        if (mHeader != null) {
+            View view = mHeader.getView();
             view.layout(0, -view.getMeasuredHeight(), view.getMeasuredWidth(), 0);
         }
 
@@ -104,7 +124,7 @@ public class PullToRefreshView extends ViewGroup {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (!isEnabled() || canScrollUp() || isRefreshing()) {
+        if (!isEnabled() || (!canRefresh() && !canLoadMore())) {
             return false;
         }
 
@@ -127,7 +147,7 @@ public class PullToRefreshView extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (!isEnabled() || canScrollUp() || isRefreshing()) {
+        if (!isEnabled() || (!canRefresh() && !canLoadMore())) {
             return false;
         }
 
@@ -139,25 +159,25 @@ public class PullToRefreshView extends ViewGroup {
                 final int y = (int) event.getY();
                 startDragging(y);
                 if (mIsBeingDragged) {
-                    final float offset = y - mLastY;
                     mMovingSum = (int) (y - mBeingDraggedY);
+                    final float offset = y - mLastY;
                     mLastY = y;
-                    final int offsetResult = mHeaderView.moving(this, mMovingSum, (int) offset);
-                    ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                    if (mMovingSum > 0) {
+                        final int offsetResult = mHeader.moving(this, mMovingSum, (int) offset);
+                        ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                    } else {
+                        final int offsetResult = mFooter.moving(this, mMovingSum, (int) offset);
+                        ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                    }
                 }
 
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (mHeaderView.isEffectiveDistance(mMovingSum)) {
-                    mHeaderView.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
-                    int offset = mHeaderView.refreshing(this, mMovingSum);
-                    ViewHelper.movingY(mTargetView, offset);
-                    notifyRefresh();
+                if (mMovingSum > 0) {
+                    updateHeaderWhenUpOrCancel();
                 } else {
-                    mHeaderView.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
-                    int offset = mHeaderView.cancelRefresh(this);
-                    ViewHelper.movingY(mTargetView, offset);
+                    updateFooterWhenUpOrCancel();
                 }
                 break;
         }
@@ -179,30 +199,77 @@ public class PullToRefreshView extends ViewGroup {
 
 
     @SuppressWarnings("unused")
-    public void setHeaderView(@NonNull IPullToRefreshHeader header) {
-        if (mHeaderView != null) {
-            removeView(mHeaderView.getView());
+    public void setHeader(@NonNull IPullToRefreshHeader header) {
+        if (mHeader != null) {
+            removeView(mHeader.getView());
         }
 
-        mHeaderView = header;
+        mHeader = header;
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         addView(header.getView(), lp);
         requestLayout();
     }
 
+    private void updateHeaderWhenUpOrCancel() {
+        if (mHeader.isEffectiveDistance(mMovingSum)) {
+            mHeader.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
+            int offset = mHeader.refreshing(this, mMovingSum);
+            ViewHelper.movingY(mTargetView, offset);
+            notifyRefresh();
+        } else {
+            mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+            int offset = mHeader.cancelRefresh(this);
+            ViewHelper.movingY(mTargetView, offset);
+        }
+    }
+
+    /**
+     * 在这里Footer比较特殊不能直接Add到 这里面，需要在Target里面实现
+     */
+    @SuppressWarnings("unused")
+    public void setFooter(@NonNull IPullToRefreshFooter footer) {
+        mFooter = footer;
+    }
+
+    private void updateFooterWhenUpOrCancel() {
+        if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {
+            mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
+            int offset = mFooter.loading(this, mTargetView, mMovingSum);
+            ViewHelper.movingY(mTargetView, offset);
+            notifyLoadMore();
+        } else {
+            mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+            int offset = mFooter.cancelLoadMore(this, mTargetView);
+            ViewHelper.movingY(mTargetView, offset);
+        }
+    }
+
+    /**
+     * 判断是否可以进行拖拽
+     */
     private void startDragging(float y) {
         final float yDiff = y - mInitialDownY;
-        if (yDiff > mTouchSlop && !mIsBeingDragged) {
+        if (Math.abs(yDiff) > mTouchSlop && !mIsBeingDragged) {
             mLastY = y;
             mIsBeingDragged = true;
             mBeingDraggedY = y;
         }
     }
 
-    private boolean isRefreshing() {
-        return mHeaderView != null && mHeaderView.getStatus() == IPullToRefreshHeader.STATUS_REFRESHING;
+    /**
+     * 是否可以进行刷新操作
+     */
+    private boolean canRefresh() {
+        return !canScrollUp() && mHeader != null && mHeader.getStatus() == IPullToRefreshHeader.STATUS_NORMAL;
     }
 
+
+    /**
+     * 是否可以进行加载更多操作
+     */
+    private boolean canLoadMore() {
+        return !canScrollDown() && mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_NORMAL;
+    }
 
     /**
      * 是否可以上滑
@@ -219,16 +286,37 @@ public class PullToRefreshView extends ViewGroup {
         return mTargetView != null && ViewCompat.canScrollVertically(mTargetView, 1);
     }
 
+    /**
+     * 刷新成功
+     */
+    @SuppressWarnings("unused")
     public void setRefreshSuccess() {
-        mHeaderView.setStatus(IPullToRefreshHeader.STATUS_SUCCESS);
-        int offset = mHeaderView.refreshSuccess(this);
-        ViewHelper.movingY(mTargetView, offset);
+        mHeader.setStatus(IPullToRefreshHeader.STATUS_SUCCESS);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int offset = mHeader.refreshSuccess(PullToRefreshView.this);
+                ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
+            }
+        }, ANI_INTERVAL);
+
     }
 
+    /**
+     * 刷新失败
+     */
+    @SuppressWarnings("unused")
     public void setRefreshFailed() {
-        mHeaderView.setStatus(IPullToRefreshHeader.STATUS_FAILED);
-        postInvalidate();
+        mHeader.setStatus(IPullToRefreshHeader.STATUS_FAILED);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int offset = mHeader.refreshSuccess(PullToRefreshView.this);
+                ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
+            }
+        }, ANI_INTERVAL);
     }
+
 
     public void setOnPullToRefreshListener(OnPullToRefreshListener listener) {
         mPullToRefreshListener = listener;
@@ -246,4 +334,29 @@ public class PullToRefreshView extends ViewGroup {
         }
     }
 
+
+    /**
+     * 重置为Normal状态
+     */
+    private Animator.AnimatorListener mSetRefreshNormalListener = new Animator.AnimatorListener() {
+        @Override
+        public void onAnimationStart(Animator animation) {
+
+        }
+
+        @Override
+        public void onAnimationEnd(Animator animation) {
+            mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+        }
+
+        @Override
+        public void onAnimationCancel(Animator animation) {
+
+        }
+
+        @Override
+        public void onAnimationRepeat(Animator animation) {
+
+        }
+    };
 }

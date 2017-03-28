@@ -4,7 +4,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -75,8 +74,6 @@ public class TestHeader extends android.support.v7.widget.AppCompatTextView impl
 
     @Override
     public int moving(ViewGroup parent, final int total, final int offset) {
-        Log.i("nian", "moving: offset = " + offset);
-        Log.i("nian", "movig: getTop = " + getTop());
         if (total >= getMaxPullDownHeight()) {
             return 0;
         } else if (getTop() + offset < -getHeaderHeight()) {

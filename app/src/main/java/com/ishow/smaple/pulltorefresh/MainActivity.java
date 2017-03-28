@@ -9,6 +9,7 @@ import android.view.View;
 
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
 import com.ishow.pulltorefresh.PullToRefreshView;
+import com.ishow.pulltorefresh.test.TestFooter;
 import com.ishow.pulltorefresh.test.TestHeader;
 
 
@@ -25,8 +26,14 @@ public class MainActivity extends AppCompatActivity {
         header.setText("Header");
 
 
+        TestAdapter adapter = new TestAdapter(this);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
         final PullToRefreshView pullToRefreshView = (PullToRefreshView) findViewById(R.id.pulltorefresh);
-        pullToRefreshView.setHeaderView(header);
+        pullToRefreshView.setHeader(header);
+        pullToRefreshView.setFooter(adapter);
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
             @Override
             public void onRefresh(View v) {
@@ -45,9 +52,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
-        recyclerView.setAdapter(new TestAdapter(this));
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
 
     }
 
