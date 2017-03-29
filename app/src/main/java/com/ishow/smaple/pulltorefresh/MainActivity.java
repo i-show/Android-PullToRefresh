@@ -9,8 +9,10 @@ import android.view.View;
 
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
 import com.ishow.pulltorefresh.PullToRefreshView;
-import com.ishow.pulltorefresh.test.TestFooter;
 import com.ishow.pulltorefresh.test.TestHeader;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -27,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         TestAdapter adapter = new TestAdapter(this);
+        adapter.setData(getData());
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -52,8 +55,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+    }
 
 
+    private List<String> getData() {
+        List<String> list = new ArrayList<>();
+        for (int i = 0; i < 15; i++) {
+            list.add("postion " + i);
+        }
+        return list;
     }
 
 }

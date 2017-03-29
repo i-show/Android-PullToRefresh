@@ -75,7 +75,7 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
 
     @Override
     public int getItemCount() {
-        return mData.size();
+        return mData.size() + 1;
     }
 
     public DATA getItem(int position) {
