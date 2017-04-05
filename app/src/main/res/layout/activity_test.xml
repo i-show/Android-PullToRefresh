@@ -4,17 +4,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <Button
-        android:id="@+id/button"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="APP" />
-
-    <com.ishow.pulltorefresh.PullToRefreshView
-        android:id="@+id/pulltorefresh"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#aa00ff00">
+        android:layout_height="wrap_content">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/list"
@@ -22,7 +15,5 @@
             android:layout_height="match_parent"
             android:background="#3300ffff"
             android:text="@string/app_name" />
-    </com.ishow.pulltorefresh.PullToRefreshView>
-
-
+    </android.support.v4.widget.SwipeRefreshLayout>
 </LinearLayout>

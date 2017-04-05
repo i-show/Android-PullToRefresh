@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -147,7 +148,9 @@ public class PullToRefreshView extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (!isEnabled() || (!canRefresh() && !canLoadMore())) {
+        final boolean canRefesh = canRefresh();
+        final boolean canLoadMore = canLoadMore();
+        if (!isEnabled() || (!canRefesh && !canLoadMore)) {
             return false;
         }
 
@@ -162,10 +165,10 @@ public class PullToRefreshView extends ViewGroup {
                     mMovingSum = (int) (y - mBeingDraggedY);
                     final float offset = y - mLastY;
                     mLastY = y;
-                    if (mMovingSum > 0) {
+                    if (mMovingSum > 0 && canRefesh) {
                         final int offsetResult = mHeader.moving(this, mMovingSum, (int) offset);
                         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
-                    } else {
+                    } else if (mMovingSum < 0 && canLoadMore) {
                         final int offsetResult = mFooter.moving(this, mMovingSum, (int) offset);
                         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
                     }
