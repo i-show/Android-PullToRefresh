@@ -78,6 +78,11 @@ public class TestFooter extends AppCompatTextView implements IPullToRefreshFoote
     }
 
     @Override
+    public int loadFailed(ViewGroup parent) {
+        return 0;
+    }
+
+    @Override
     public boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance) {
         return targetView.getBottom() > 130;
     }

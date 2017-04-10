@@ -52,6 +52,8 @@ public class PullToRefreshView extends ViewGroup {
     private int mTouchSlop;
 
     private boolean mIsBeingDragged;
+    private boolean mIsBeingDraggedUp;
+    private boolean mIsBeingDraggedDown;
 
     /**
      * 监听
@@ -125,13 +127,19 @@ public class PullToRefreshView extends ViewGroup {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (!isEnabled() || (!canRefresh() && !canLoadMore())) {
+        final boolean canRefesh = canRefresh();
+        final boolean canLoadMore = canLoadMore();
+        Log.i(TAG, "onInterceptTouchEvent: canRefesh =" + canRefesh);
+        Log.i(TAG, "onInterceptTouchEvent: canLoadMore =" + canLoadMore);
+        if (!isEnabled() || (!canRefesh && !canLoadMore)) {
             return false;
         }
 
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mIsBeingDragged = false;
+                mIsBeingDraggedUp = false;
+                mIsBeingDraggedDown = false;
                 mInitialDownY = ev.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -141,9 +149,18 @@ public class PullToRefreshView extends ViewGroup {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 mIsBeingDragged = false;
+                mIsBeingDraggedUp = false;
+                mIsBeingDraggedDown = false;
                 break;
         }
-        return mIsBeingDragged;
+
+        if (mIsBeingDraggedUp && canLoadMore) {
+            return true;
+        } else if (mIsBeingDraggedDown && canRefesh) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -161,18 +178,21 @@ public class PullToRefreshView extends ViewGroup {
             case MotionEvent.ACTION_MOVE:
                 final int y = (int) event.getY();
                 startDragging(y);
-                if (mIsBeingDragged) {
-                    mMovingSum = (int) (y - mBeingDraggedY);
-                    final float offset = y - mLastY;
-                    mLastY = y;
-                    if (mMovingSum > 0 && canRefesh) {
-                        final int offsetResult = mHeader.moving(this, mMovingSum, (int) offset);
-                        ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
-                    } else if (mMovingSum < 0 && canLoadMore) {
-                        final int offsetResult = mFooter.moving(this, mMovingSum, (int) offset);
-                        ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
-                    }
+                if (!mIsBeingDragged) {
+                    break;
                 }
+
+                mMovingSum = (int) (y - mBeingDraggedY);
+                final float offset = y - mLastY;
+                mLastY = y;
+                if (mIsBeingDraggedDown) {
+                    final int offsetResult = mHeader.moving(this, mMovingSum, (int) offset);
+                    ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                } else if (mIsBeingDraggedUp) {
+                    final int offsetResult = mFooter.moving(this, mMovingSum, (int) offset);
+                    ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                }
+
 
                 break;
             case MotionEvent.ACTION_UP:
@@ -182,6 +202,7 @@ public class PullToRefreshView extends ViewGroup {
                 } else {
                     updateFooterWhenUpOrCancel();
                 }
+                mIsBeingDragged = false;
                 break;
         }
         return true;
@@ -256,6 +277,13 @@ public class PullToRefreshView extends ViewGroup {
             mLastY = y;
             mIsBeingDragged = true;
             mBeingDraggedY = y;
+            if (yDiff > 0) {
+                // 开始下拉刷新
+                mIsBeingDraggedDown = true;
+            } else {
+                // 开始上拉
+                mIsBeingDraggedUp = true;
+            }
         }
     }
 
@@ -263,7 +291,9 @@ public class PullToRefreshView extends ViewGroup {
      * 是否可以进行刷新操作
      */
     private boolean canRefresh() {
-        return !canScrollUp() && mHeader != null && mHeader.getStatus() == IPullToRefreshHeader.STATUS_NORMAL;
+        return !canScrollUp() &&
+                mHeader != null &&
+                mHeader.getStatus() == IPullToRefreshHeader.STATUS_NORMAL;
     }
 
 
@@ -271,7 +301,9 @@ public class PullToRefreshView extends ViewGroup {
      * 是否可以进行加载更多操作
      */
     private boolean canLoadMore() {
-        return !canScrollDown() && mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_NORMAL;
+        return !canScrollDown() &&
+                mFooter != null &&
+                mFooter.getStatus() == IPullToRefreshFooter.STATUS_NORMAL;
     }
 
     /**
@@ -320,6 +352,35 @@ public class PullToRefreshView extends ViewGroup {
         }, ANI_INTERVAL);
     }
 
+    /**
+     * 下拉加载失败
+     */
+    @SuppressWarnings("unused")
+    public void setLoadMoreFailed() {
+        mFooter.setStatus(IPullToRefreshFooter.STATUS_FAILED);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int offset = mFooter.loadFailed(PullToRefreshView.this);
+                ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
+            }
+        }, ANI_INTERVAL);
+    }
+
+    /**
+     * 下拉加载成功
+     */
+    @SuppressWarnings("unused")
+    public void setLoadMoreSuccess() {
+        mFooter.setStatus(IPullToRefreshFooter.STATUS_SUCCESS);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int offset = mFooter.loadSuccess(PullToRefreshView.this);
+                ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
+            }
+        }, ANI_INTERVAL);
+    }
 
     public void setOnPullToRefreshListener(OnPullToRefreshListener listener) {
         mPullToRefreshListener = listener;
@@ -350,6 +411,32 @@ public class PullToRefreshView extends ViewGroup {
         @Override
         public void onAnimationEnd(Animator animation) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+        }
+
+        @Override
+        public void onAnimationCancel(Animator animation) {
+
+        }
+
+        @Override
+        public void onAnimationRepeat(Animator animation) {
+
+        }
+    };
+
+
+    /**
+     * 重置为Normal状态
+     */
+    private Animator.AnimatorListener mSetLoadNormalListener = new Animator.AnimatorListener() {
+        @Override
+        public void onAnimationStart(Animator animation) {
+
+        }
+
+        @Override
+        public void onAnimationEnd(Animator animation) {
+            mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
         }
 
         @Override

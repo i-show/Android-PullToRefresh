@@ -30,6 +30,7 @@ class TestAdapter extends LinearLayoutAdapter<String, TestAdapter.ViewHolder> {
     }
 
 
+
     class ViewHolder extends LinearLayoutAdapter.Holder {
         TextView textView;
 

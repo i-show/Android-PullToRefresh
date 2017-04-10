@@ -60,7 +60,12 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onLoadMore(View v) {
-
+                v.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        pullToRefreshView.setLoadMoreSuccess();
+                    }
+                }, 3000);
             }
         });
 

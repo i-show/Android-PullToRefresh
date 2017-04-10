@@ -26,6 +26,7 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
     protected Context mContext;
     protected LayoutInflater mLayoutInflater;
 
+
     public LinearLayoutAdapter(Context context) {
         mData = new ArrayList<>();
         mContext = context;
@@ -118,6 +119,12 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
     }
 
     @Override
+    public int loadFailed(ViewGroup parent) {
+        return 0;
+    }
+
+
+    @Override
     public boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance) {
         return targetView.getBottom() > 130;
     }
@@ -147,7 +154,10 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
 
         }
 
-        public void setFooterStatus(int status) {
+        void setFooterStatus(int status) {
+            if (mFooterView == null) {
+                return;
+            }
             switch (status) {
                 case STATUS_NORMAL:
                     mFooterView.setText("normal");
@@ -157,6 +167,11 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
                     break;
                 case STATUS_LOADING:
                     mFooterView.setText("loading");
+                case STATUS_SUCCESS:
+                    mFooterView.setText("success");
+                    break;
+                case STATUS_FAILED:
+                    mFooterView.setText("failed");
                     break;
                 case STATUS_END:
                     mFooterView.setText("end");

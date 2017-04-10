@@ -26,11 +26,19 @@ public interface IPullToRefreshFooter {
      */
     int STATUS_LOADING = 2;
     /**
+     * 刷新成功
+     */
+    int STATUS_SUCCESS = 3;
+    /**
+     * 刷新失败
+     */
+    int STATUS_FAILED = 4;
+    /**
      * 全部加载完毕
      */
-    int STATUS_END = 3;
+    int STATUS_END = 5;
 
-    @IntDef({STATUS_NORMAL, STATUS_READY, STATUS_LOADING, STATUS_END})
+    @IntDef({STATUS_NORMAL, STATUS_READY, STATUS_LOADING, STATUS_SUCCESS, STATUS_FAILED, STATUS_END})
     @Retention(RetentionPolicy.SOURCE)
     @interface status {
     }
@@ -69,9 +77,14 @@ public interface IPullToRefreshFooter {
     int cancelLoadMore(ViewGroup parent, View targetView);
 
     /**
-     * 刷新成功
+     * 加载成功
      */
     int loadSuccess(ViewGroup parent);
+
+    /**
+     * 加载失败
+     */
+    int loadFailed(ViewGroup parent);
 
 
     /**
