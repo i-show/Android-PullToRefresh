@@ -43,7 +43,10 @@ public interface IPullToRefreshFooter {
     @interface status {
     }
 
-    void init();
+    /**
+     * 初始化
+     */
+    void init(ViewGroup parent);
 
     /**
      * 设置状态

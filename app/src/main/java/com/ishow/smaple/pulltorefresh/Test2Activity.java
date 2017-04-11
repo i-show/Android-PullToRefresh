@@ -20,24 +20,18 @@ public class Test2Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
 
-        TestAdapter adapter = new TestAdapter(this);
+        final TestAdapter adapter = new TestAdapter(this);
         adapter.setData(getData());
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        final SwipeRefreshLayout layout = (SwipeRefreshLayout) findViewById(R.id.swipe);
-        layout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        recyclerView.postDelayed(new Runnable() {
             @Override
-            public void onRefresh() {
-                layout.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        layout.setRefreshing(false);
-                    }
-                }, 3000);
+            public void run() {
+                adapter.addData(getData());
             }
-        });
+        }, 13000);
     }
 
 

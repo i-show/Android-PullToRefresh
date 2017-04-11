@@ -24,7 +24,7 @@ public class PullToRefreshView extends ViewGroup {
     /**
      * 设置了时间的时候进行配置一个时间间隔
      */
-    private static final int ANI_INTERVAL = 800;
+    private static final int ANI_INTERVAL = 500;
     /**
      * HeaderView
      */
@@ -55,6 +55,7 @@ public class PullToRefreshView extends ViewGroup {
     private boolean mIsBeingDraggedUp;
     private boolean mIsBeingDraggedDown;
 
+    private boolean mCanOnLayout;
     /**
      * 监听
      */
@@ -76,6 +77,7 @@ public class PullToRefreshView extends ViewGroup {
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop() * 2;
         mHandler = new Handler();
+        mCanOnLayout = true;
     }
 
 
@@ -104,15 +106,28 @@ public class PullToRefreshView extends ViewGroup {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        final int width = getMeasuredWidth();
+        final int height = getMeasuredHeight();
+
+
         if (mHeader != null) {
             View view = mHeader.getView();
             measureChild(view, widthMeasureSpec, heightMeasureSpec);
         }
-
+        if (mTargetView != null) {
+            int widthM = MeasureSpec.makeMeasureSpec(width - getPaddingLeft() - getPaddingRight(), MeasureSpec.EXACTLY);
+            int heightM = MeasureSpec.makeMeasureSpec(height - getPaddingTop() - getPaddingBottom(), MeasureSpec.EXACTLY);
+            mTargetView.measure(widthM, heightM);
+        }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        final int width = getMeasuredWidth();
+        final int height = getMeasuredHeight();
+        if (!mCanOnLayout) {
+            return;
+        }
 
         if (mHeader != null) {
             View view = mHeader.getView();
@@ -120,7 +135,12 @@ public class PullToRefreshView extends ViewGroup {
         }
 
         if (mTargetView != null) {
-            mTargetView.layout(0, 0, getMeasuredWidth(), getMeasuredHeight());
+            final View child = mTargetView;
+            final int childLeft = getPaddingLeft();
+            final int childTop = getPaddingTop();
+            final int childWidth = width - getPaddingLeft() - getPaddingRight();
+            final int childHeight = height - getPaddingTop() - getPaddingBottom();
+            child.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight);
         }
     }
 
@@ -129,8 +149,6 @@ public class PullToRefreshView extends ViewGroup {
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         final boolean canRefesh = canRefresh();
         final boolean canLoadMore = canLoadMore();
-        Log.i(TAG, "onInterceptTouchEvent: canRefesh =" + canRefesh);
-        Log.i(TAG, "onInterceptTouchEvent: canLoadMore =" + canLoadMore);
         if (!isEnabled() || (!canRefesh && !canLoadMore)) {
             return false;
         }
@@ -174,6 +192,7 @@ public class PullToRefreshView extends ViewGroup {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mIsBeingDragged = false;
+                mCanOnLayout = false;
                 break;
             case MotionEvent.ACTION_MOVE:
                 final int y = (int) event.getY();
@@ -192,8 +211,6 @@ public class PullToRefreshView extends ViewGroup {
                     final int offsetResult = mFooter.moving(this, mMovingSum, (int) offset);
                     ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
                 }
-
-
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
@@ -241,9 +258,8 @@ public class PullToRefreshView extends ViewGroup {
             ViewHelper.movingY(mTargetView, offset);
             notifyRefresh();
         } else {
-            mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
             int offset = mHeader.cancelRefresh(this);
-            ViewHelper.movingY(mTargetView, offset);
+            ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
         }
     }
 
@@ -262,9 +278,8 @@ public class PullToRefreshView extends ViewGroup {
             ViewHelper.movingY(mTargetView, offset);
             notifyLoadMore();
         } else {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
             int offset = mFooter.cancelLoadMore(this, mTargetView);
-            ViewHelper.movingY(mTargetView, offset);
+            ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
         }
     }
 
@@ -276,6 +291,7 @@ public class PullToRefreshView extends ViewGroup {
         if (Math.abs(yDiff) > mTouchSlop && !mIsBeingDragged) {
             mLastY = y;
             mIsBeingDragged = true;
+            mCanOnLayout = false;
             mBeingDraggedY = y;
             if (yDiff > 0) {
                 // 开始下拉刷新
@@ -411,6 +427,7 @@ public class PullToRefreshView extends ViewGroup {
         @Override
         public void onAnimationEnd(Animator animation) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+            mCanOnLayout = true;
         }
 
         @Override

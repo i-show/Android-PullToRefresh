@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
@@ -38,8 +39,8 @@ public class MainActivity extends AppCompatActivity {
         header.setText("Header");
 
 
-        TestAdapter adapter = new TestAdapter(this);
-        adapter.setData(getData());
+        final TestAdapter adapter = new TestAdapter(this);
+        adapter.setData(getData(adapter));
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -50,20 +51,24 @@ public class MainActivity extends AppCompatActivity {
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
             @Override
             public void onRefresh(View v) {
+                Log.i("nian", "onRefresh: ");
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         pullToRefreshView.setRefreshSuccess();
+                        adapter.setData(getData(null));
                     }
                 }, 3000);
             }
 
             @Override
             public void onLoadMore(View v) {
+                Log.i("nian", "onLoadMore: ");
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         pullToRefreshView.setLoadMoreSuccess();
+                        adapter.addData(getData(adapter));
                     }
                 }, 3000);
             }
@@ -73,10 +78,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private List<String> getData() {
+    private List<String> getData(TestAdapter adapter) {
         List<String> list = new ArrayList<>();
+
+        int size = 0;
+        if (adapter != null) {
+            size = adapter.getItemCount();
+        }
         for (int i = 0; i < 15; i++) {
-            list.add("postion " + i);
+            int index = size + i;
+            list.add("postion " + index);
         }
         return list;
     }
