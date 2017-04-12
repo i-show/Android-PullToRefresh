@@ -16,6 +16,10 @@ import com.ishow.pulltorefresh.test.TestHeader;
 import java.util.ArrayList;
 import java.util.List;
 
+import jp.wasabeef.recyclerview.animators.FadeInDownAnimator;
+import jp.wasabeef.recyclerview.animators.SlideInDownAnimator;
+import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,20 +28,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        View button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, Test2Activity.class);
-                startActivity(intent);
-            }
-        });
-
         TestHeader header = new TestHeader(this);
         header.setMinHeight(150);
-        header.setBackgroundColor(Color.GREEN);
         header.setText("Header");
-
 
         final TestAdapter adapter = new TestAdapter(this);
         adapter.setData(getData(adapter));
@@ -51,11 +44,11 @@ public class MainActivity extends AppCompatActivity {
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
             @Override
             public void onRefresh(View v) {
-                Log.i("nian", "onRefresh: ");
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         pullToRefreshView.setRefreshSuccess();
+                        pullToRefreshView.setLoadMoreNormal();
                         adapter.setData(getData(null));
                     }
                 }, 3000);
@@ -63,12 +56,13 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onLoadMore(View v) {
-                Log.i("nian", "onLoadMore: ");
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        pullToRefreshView.setLoadMoreSuccess();
                         adapter.addData(getData(adapter));
+                        if (adapter.getItemCount() >= 15) {
+                            pullToRefreshView.setLoadMoreEnd();
+                        }
                     }
                 }, 3000);
             }
@@ -85,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         if (adapter != null) {
             size = adapter.getItemCount();
         }
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 10; i++) {
             int index = size + i;
             list.add("postion " + index);
         }

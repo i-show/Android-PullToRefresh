@@ -1,6 +1,7 @@
 package com.ishow.pulltorefresh;
 
 import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -207,9 +208,19 @@ public class PullToRefreshView extends ViewGroup {
                 if (mIsBeingDraggedDown) {
                     final int offsetResult = mHeader.moving(this, mMovingSum, (int) offset);
                     ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                    if (mHeader.isEffectiveDistance(mMovingSum)) {
+                        mHeader.setStatus(IPullToRefreshHeader.STATUS_READY);
+                    } else {
+                        mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+                    }
                 } else if (mIsBeingDraggedUp) {
                     final int offsetResult = mFooter.moving(this, mMovingSum, (int) offset);
                     ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+                    if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {
+                        mFooter.setStatus(IPullToRefreshFooter.STATUS_READY);
+                    } else {
+                        mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -307,9 +318,16 @@ public class PullToRefreshView extends ViewGroup {
      * 是否可以进行刷新操作
      */
     private boolean canRefresh() {
-        return !canScrollUp() &&
-                mHeader != null &&
-                mHeader.getStatus() == IPullToRefreshHeader.STATUS_NORMAL;
+        if (mHeader == null) {
+            return false;
+        }
+
+        final int status = mHeader.getStatus();
+
+        boolean isStatusOk = status == IPullToRefreshHeader.STATUS_NORMAL ||
+                status == IPullToRefreshHeader.STATUS_READY;
+
+        return !canScrollUp() && isStatusOk;
     }
 
 
@@ -317,9 +335,17 @@ public class PullToRefreshView extends ViewGroup {
      * 是否可以进行加载更多操作
      */
     private boolean canLoadMore() {
-        return !canScrollDown() &&
-                mFooter != null &&
-                mFooter.getStatus() == IPullToRefreshFooter.STATUS_NORMAL;
+
+        if (mFooter == null) {
+            return false;
+        }
+
+        final int status = mFooter.getStatus();
+
+        boolean isStatusOk = (status == IPullToRefreshFooter.STATUS_NORMAL ||
+                status == IPullToRefreshFooter.STATUS_READY);
+
+        return !canScrollDown() && isStatusOk;
     }
 
     /**
@@ -366,6 +392,34 @@ public class PullToRefreshView extends ViewGroup {
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
+    }
+
+    /**
+     * 加载完成
+     */
+    @SuppressWarnings("unused")
+    public void setLoadMoreNormal() {
+        mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+    }
+
+    /**
+     * 加载完成
+     */
+    @SuppressWarnings("unused")
+    public void setLoadMoreEnd() {
+        if (mTargetView == null) {
+            return;
+        }
+
+        Object object = mTargetView.getTag(R.id.tag_pull_to_refresh_animation);
+        if (object != null) {
+            ValueAnimator animator = (ValueAnimator) object;
+            animator.removeAllListeners();
+        }
+
+        mFooter.setStatus(IPullToRefreshFooter.STATUS_END);
+        mCanOnLayout = true;
+        requestLayout();
     }
 
     /**
@@ -428,6 +482,7 @@ public class PullToRefreshView extends ViewGroup {
         public void onAnimationEnd(Animator animation) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
             mCanOnLayout = true;
+            requestLayout();
         }
 
         @Override
@@ -454,6 +509,8 @@ public class PullToRefreshView extends ViewGroup {
         @Override
         public void onAnimationEnd(Animator animation) {
             mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+            mCanOnLayout = true;
+            requestLayout();
         }
 
         @Override

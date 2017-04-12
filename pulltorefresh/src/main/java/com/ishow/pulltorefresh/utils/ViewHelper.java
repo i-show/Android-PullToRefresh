@@ -30,7 +30,6 @@ public class ViewHelper {
 
     @SuppressWarnings("WeakerAccess")
     public static void movingY(final @NonNull View view, @IntRange(from = 1) int duration, int distance, Animator.AnimatorListener listener) {
-        view.setTag(R.id.tag_pull_to_refresh_moving_y, 0);
         ValueAnimator animator = ValueAnimator.ofInt(distance);
         animator.setTarget(view);
         animator.setDuration(duration);
@@ -38,6 +37,9 @@ public class ViewHelper {
             animator.addListener(listener);
         }
         animator.start();
+        view.setTag(R.id.tag_pull_to_refresh_moving_y, 0);
+        view.setTag(R.id.tag_pull_to_refresh_animation, animator);
+        
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {

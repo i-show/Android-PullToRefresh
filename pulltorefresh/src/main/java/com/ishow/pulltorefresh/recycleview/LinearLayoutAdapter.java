@@ -38,12 +38,8 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
         mLayoutInflater = LayoutInflater.from(context);
     }
 
-    public void setData(List<DATA> datas) {
-        if (datas == null) {
-            mData.clear();
-        } else {
-            mData = datas;
-        }
+    public void setData(@NonNull List<DATA> datas) {
+        mData = datas;
         notifyDataSetChanged();
     }
 
