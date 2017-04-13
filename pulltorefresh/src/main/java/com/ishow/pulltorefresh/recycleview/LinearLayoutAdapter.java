@@ -1,11 +1,14 @@
 package com.ishow.pulltorefresh.recycleview;
 
 import android.content.Context;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -21,8 +24,10 @@ import java.util.List;
  */
 
 public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.Holder> extends RecyclerView.Adapter<VH> implements IPullToRefreshFooter {
+    private static final int ROTATE_ANIM_DURATION = 380;
     public static final int TYPE_BODY = 0;
     public static final int TYPE_FOOTER = 1;
+
     private int mStatus;
     private List<DATA> mData;
     protected Context mContext;
@@ -32,10 +37,17 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
     private TextView mFooterTextView;
     private ImageView mFooterLoadingView;
 
+    private RotateAnimation mRotateLoading;
+
     public LinearLayoutAdapter(Context context) {
         mData = new ArrayList<>();
         mContext = context;
         mLayoutInflater = LayoutInflater.from(context);
+
+        mRotateLoading = new RotateAnimation(0, 360.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        mRotateLoading.setDuration(ROTATE_ANIM_DURATION * 2);
+        mRotateLoading.setRepeatCount(Animation.INFINITE);
+        mRotateLoading.setFillAfter(false);
     }
 
     public void setData(@NonNull List<DATA> datas) {
@@ -109,7 +121,11 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
 
     @Override
     public int moving(ViewGroup parent, int total, int offset) {
-        return offset;
+        if (Math.abs(total) >= getMaxPullUpHeight()) {
+            return 0;
+        } else {
+            return offset;
+        }
     }
 
     @Override
@@ -135,7 +151,16 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
 
     @Override
     public boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance) {
-        return targetView.getBottom() > mFooterView.getMeasuredHeight();
+        if (targetView == null || mFooterView == null) {
+            return false;
+        } else {
+            return targetView.getBottom() > mFooterView.getMeasuredHeight();
+        }
+    }
+
+    @Override
+    public int getMaxPullUpHeight() {
+        return mFooterView.getMeasuredHeight() * 3;
     }
 
     private void setFooterStatus(int status) {
@@ -144,22 +169,30 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
         }
         switch (status) {
             case STATUS_NORMAL:
-                mFooterTextView.setText("normal");
+                mFooterLoadingView.setVisibility(View.GONE);
+                mFooterTextView.setText(R.string.pulltorefresh_footer_normal);
                 break;
             case STATUS_READY:
-                mFooterTextView.setText("ready");
+                mFooterLoadingView.setVisibility(View.GONE);
+                mFooterTextView.setText(R.string.pulltorefresh_footer_ready);
                 break;
             case STATUS_LOADING:
-                mFooterTextView.setText("loading");
+                mFooterLoadingView.clearAnimation();
+                mFooterLoadingView.startAnimation(mRotateLoading);
+                mFooterLoadingView.setVisibility(View.VISIBLE);
+                mFooterTextView.setText(R.string.pulltorefresh_footer_loading);
                 break;
             case STATUS_SUCCESS:
-                mFooterTextView.setText("success");
+                mFooterLoadingView.setVisibility(View.GONE);
+                mFooterTextView.setText(R.string.pulltorefresh_footer_success);
                 break;
             case STATUS_FAILED:
-                mFooterTextView.setText("failed");
+                mFooterLoadingView.setVisibility(View.GONE);
+                mFooterTextView.setText(R.string.pulltorefresh_footer_fail);
                 break;
             case STATUS_END:
-                mFooterTextView.setText("end");
+                mFooterLoadingView.setVisibility(View.GONE);
+                mFooterTextView.setText(R.string.pulltorefresh_footer_end);
                 break;
         }
     }

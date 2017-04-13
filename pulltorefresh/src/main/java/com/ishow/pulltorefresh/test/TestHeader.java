@@ -118,7 +118,7 @@ public class TestHeader extends android.support.v7.widget.AppCompatTextView impl
 
     @Override
     public int getMaxPullDownHeight() {
-        return (getMeasuredHeight() * 3);
+        return (getMeasuredHeight() * 5);
     }
 
     @Override

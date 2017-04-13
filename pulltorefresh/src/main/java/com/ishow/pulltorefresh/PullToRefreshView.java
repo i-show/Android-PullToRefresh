@@ -127,6 +127,15 @@ public class PullToRefreshView extends ViewGroup {
         final int width = getMeasuredWidth();
         final int height = getMeasuredHeight();
         if (!mCanOnLayout) {
+            if (mHeader != null) {
+                View view = mHeader.getView();
+                view.layout(view.getLeft(), view.getTop(), view.getRight(), view.getBottom());
+            }
+
+            if (mTargetView != null) {
+                View view = mTargetView;
+                view.layout(view.getLeft(), view.getTop(), view.getRight(), view.getBottom());
+            }
             return;
         }
 

@@ -95,4 +95,9 @@ public interface IPullToRefreshFooter {
      */
     boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance);
 
+
+    /**
+     * 获取上拉的最大高度
+     */
+    int getMaxPullUpHeight();
 }

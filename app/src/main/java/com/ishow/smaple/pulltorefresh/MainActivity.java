@@ -11,6 +11,7 @@ import android.view.View;
 
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
 import com.ishow.pulltorefresh.PullToRefreshView;
+import com.ishow.pulltorefresh.classic.ClassicHeader;
 import com.ishow.pulltorefresh.test.TestHeader;
 
 import java.util.ArrayList;
@@ -28,9 +29,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        TestHeader header = new TestHeader(this);
-        header.setMinHeight(150);
-        header.setText("Header");
+        ClassicHeader header = new ClassicHeader(this);
 
         final TestAdapter adapter = new TestAdapter(this);
         adapter.setData(getData(adapter));
