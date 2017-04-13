@@ -57,6 +57,7 @@ public abstract class LinearLayoutAdapter<DATA, VH extends LinearLayoutAdapter.H
 
 
     public void addData(@NonNull List<DATA> datas) {
+        int index = mData.size();
         mData.addAll(datas);
         notifyDataSetChanged();
     }

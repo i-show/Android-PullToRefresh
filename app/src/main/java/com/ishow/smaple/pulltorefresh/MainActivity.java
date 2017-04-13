@@ -1,24 +1,20 @@
 package com.ishow.smaple.pulltorefresh;
 
-import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
 import com.ishow.pulltorefresh.PullToRefreshView;
 import com.ishow.pulltorefresh.classic.ClassicHeader;
-import com.ishow.pulltorefresh.test.TestHeader;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import jp.wasabeef.recyclerview.animators.FadeInDownAnimator;
-import jp.wasabeef.recyclerview.animators.SlideInDownAnimator;
+import jp.wasabeef.recyclerview.animators.FadeInRightAnimator;
+import jp.wasabeef.recyclerview.animators.ScaleInRightAnimator;
 import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator;
 
 
@@ -35,6 +31,11 @@ public class MainActivity extends AppCompatActivity {
         adapter.setData(getData(adapter));
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
         recyclerView.setAdapter(adapter);
+        recyclerView.setItemAnimator(new ScaleInRightAnimator());
+        recyclerView.getItemAnimator().setAddDuration(5000);
+        recyclerView.getItemAnimator().setChangeDuration(5000);
+        recyclerView.getItemAnimator().setMoveDuration(5000);
+        recyclerView.getItemAnimator().setRemoveDuration(5000);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         final PullToRefreshView pullToRefreshView = (PullToRefreshView) findViewById(R.id.pulltorefresh);

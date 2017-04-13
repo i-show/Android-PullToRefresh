@@ -15,7 +15,7 @@ import com.ishow.pulltorefresh.R;
  */
 
 public class ViewHelper {
-    private static final int DEFAULT_1000_PIXELS_TIMES = 1200;
+    private static final int DEFAULT_1000_PIXELS_TIMES = 1600;
 
     public static void movingY(final @NonNull View view, int distance) {
         int duration = calculatingDuration(distance);
