@@ -271,6 +271,7 @@ public class PullToRefreshView extends ViewGroup {
         requestLayout();
     }
 
+    
     private void updateHeaderWhenUpOrCancel() {
         if (mHeader.isEffectiveDistance(mMovingSum)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);

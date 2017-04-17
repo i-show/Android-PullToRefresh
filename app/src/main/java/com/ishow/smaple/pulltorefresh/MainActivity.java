@@ -26,16 +26,12 @@ public class MainActivity extends AppCompatActivity {
 
         final Test2Adapter adapter = new Test2Adapter(this);
         adapter.setData(getData(adapter));
-
         LoadMoreAdapter wrapper = new LoadMoreAdapter(this, adapter);
-
         GridLayoutManager manager = new GridLayoutManager(this, 2);
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
-        //recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setLayoutManager(manager);
         recyclerView.setAdapter(wrapper);
-
 
         final PullToRefreshView pullToRefreshView = (PullToRefreshView) findViewById(R.id.pulltorefresh);
         pullToRefreshView.setHeader(header);
@@ -78,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         if (adapter != null) {
             size = adapter.getItemCount();
         }
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             int index = size + i;
             list.add("postion " + index);
         }
