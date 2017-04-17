@@ -2,20 +2,17 @@ package com.ishow.smaple.pulltorefresh;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
 import com.ishow.pulltorefresh.PullToRefreshView;
 import com.ishow.pulltorefresh.classic.ClassicHeader;
+import com.ishow.pulltorefresh.recycleview.LoadMoreAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import jp.wasabeef.recyclerview.animators.FadeInRightAnimator;
-import jp.wasabeef.recyclerview.animators.ScaleInRightAnimator;
-import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -27,20 +24,22 @@ public class MainActivity extends AppCompatActivity {
 
         ClassicHeader header = new ClassicHeader(this);
 
-        final TestAdapter adapter = new TestAdapter(this);
+        final Test2Adapter adapter = new Test2Adapter(this);
         adapter.setData(getData(adapter));
+
+        LoadMoreAdapter wrapper = new LoadMoreAdapter(this, adapter);
+
+        GridLayoutManager manager = new GridLayoutManager(this, 2);
+
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
-        recyclerView.setAdapter(adapter);
-        recyclerView.setItemAnimator(new ScaleInRightAnimator());
-        recyclerView.getItemAnimator().setAddDuration(5000);
-        recyclerView.getItemAnimator().setChangeDuration(5000);
-        recyclerView.getItemAnimator().setMoveDuration(5000);
-        recyclerView.getItemAnimator().setRemoveDuration(5000);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        //recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(manager);
+        recyclerView.setAdapter(wrapper);
+
 
         final PullToRefreshView pullToRefreshView = (PullToRefreshView) findViewById(R.id.pulltorefresh);
         pullToRefreshView.setHeader(header);
-        pullToRefreshView.setFooter(adapter);
+        pullToRefreshView.setFooter(wrapper);
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
             @Override
             public void onRefresh(View v) {
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        adapter.addData(getData(adapter));
+                        adapter.plusData(getData(adapter));
                         if (adapter.getItemCount() >= 15) {
                             pullToRefreshView.setLoadMoreEnd();
                         }
@@ -72,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private List<String> getData(TestAdapter adapter) {
+    private List<String> getData(RecyclerView.Adapter adapter) {
         List<String> list = new ArrayList<>();
 
         int size = 0;
