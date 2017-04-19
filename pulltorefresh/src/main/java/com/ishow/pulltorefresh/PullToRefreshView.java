@@ -271,7 +271,7 @@ public class PullToRefreshView extends ViewGroup {
         requestLayout();
     }
 
-    
+
     private void updateHeaderWhenUpOrCancel() {
         if (mHeader.isEffectiveDistance(mMovingSum)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
@@ -409,7 +409,9 @@ public class PullToRefreshView extends ViewGroup {
      */
     @SuppressWarnings("unused")
     public void setLoadMoreNormal() {
-        mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+        if (mFooter != null) {
+            mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+        }
     }
 
     /**
@@ -427,7 +429,9 @@ public class PullToRefreshView extends ViewGroup {
             animator.removeAllListeners();
         }
 
-        mFooter.setStatus(IPullToRefreshFooter.STATUS_END);
+        if (mFooter != null) {
+            mFooter.setStatus(IPullToRefreshFooter.STATUS_END);
+        }
         mCanOnLayout = true;
         requestLayout();
     }
@@ -437,6 +441,10 @@ public class PullToRefreshView extends ViewGroup {
      */
     @SuppressWarnings("unused")
     public void setLoadMoreFailed() {
+        if (mFooter == null) {
+            Log.i(TAG, "setLoadMoreFailed: mFooter is null");
+            return;
+        }
         mFooter.setStatus(IPullToRefreshFooter.STATUS_FAILED);
         mHandler.postDelayed(new Runnable() {
             @Override
@@ -452,6 +460,10 @@ public class PullToRefreshView extends ViewGroup {
      */
     @SuppressWarnings("unused")
     public void setLoadMoreSuccess() {
+        if (mFooter == null) {
+            Log.i(TAG, "setLoadMoreSuccess: mFooter is null");
+            return;
+        }
         mFooter.setStatus(IPullToRefreshFooter.STATUS_SUCCESS);
         mHandler.postDelayed(new Runnable() {
             @Override

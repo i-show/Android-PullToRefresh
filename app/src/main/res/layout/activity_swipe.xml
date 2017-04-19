@@ -5,13 +5,7 @@
               android:orientation="vertical">
 
 
-    <Button
-        android:id="@+id/swipe_test"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/app_name"/>
-
-    <com.ishow.pulltorefresh.PullToRefreshView
+    <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/pulltorefresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -22,7 +16,7 @@
             android:layout_height="match_parent"
             android:overScrollMode="never"
             android:text="@string/app_name"/>
-    </com.ishow.pulltorefresh.PullToRefreshView>
+    </android.support.v4.widget.SwipeRefreshLayout>
 
 
 </LinearLayout>

@@ -1,5 +1,6 @@
 package com.ishow.smaple.pulltorefresh;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -63,6 +64,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+        View swipeTest = findViewById(R.id.swipe_test);
+        swipeTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, SwipeActivity.class);
+                startActivity(intent);
+            }
+        });
 
     }
 
