@@ -67,7 +67,7 @@ public interface IPullToRefreshFooter {
      * @param offset 当前事件移动的距离
      * @return header移动的距离
      */
-    int moving(ViewGroup parent, final int total, final int offset);
+    int moving(ViewGroup parent, View targetView, final int total, final int offset);
 
     /**
      * 刷新中....

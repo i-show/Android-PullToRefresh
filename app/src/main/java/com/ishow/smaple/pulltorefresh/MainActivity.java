@@ -58,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
                         adapter.plusData(getData(adapter));
                         if (adapter.getItemCount() >= 80) {
                             pullToRefreshView.setLoadMoreEnd();
+                        } else {
+                            pullToRefreshView.setLoadMoreSuccess();
                         }
                     }
                 }, 3000);

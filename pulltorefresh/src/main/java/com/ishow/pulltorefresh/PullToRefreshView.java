@@ -324,7 +324,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             Log.i(TAG, "movingFooter: mFooter is null");
             return;
         }
-        final int offsetResult = mFooter.moving(this, total, offset);
+        final int offsetResult = mFooter.moving(this, mTargetView, total, offset);
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
         mTargetOffsetTop = mTargetView.getTop();
         if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {

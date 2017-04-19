@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -179,9 +180,13 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public int moving(ViewGroup parent, int total, int offset) {
+    public int moving(ViewGroup parent, View targetView, int total, int offset) {
+        Log.i("nian", "moving: offset = " + targetView.getTop());
+        Log.i("nian", "moving: offset = " + offset);
         if (Math.abs(total) >= getMaxPullUpHeight()) {
             return 0;
+        } else if (targetView.getTop() > offset) {
+            return targetView.getTop();
         } else {
             return -offset;
         }
