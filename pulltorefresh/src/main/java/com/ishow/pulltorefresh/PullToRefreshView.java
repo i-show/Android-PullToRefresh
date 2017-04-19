@@ -74,7 +74,8 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     // If nested scrolling is enabled, the total amount that needed to be
     // consumed by this as the nested scrolling parent is used in place of the
     // overscroll determined by MOVE events in the onTouch handler
-    private float mTotalUnconsumed;
+    private float mRefreshTotalUnconsumed;
+    private float mLoadMoreTotalUnconsumed;
     private final NestedScrollingParentHelper mNestedScrollingParentHelper;
     private final NestedScrollingChildHelper mNestedScrollingChildHelper;
     private final int[] mParentScrollConsumed = new int[2];
@@ -233,7 +234,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 if (mMovingSum > 0) {
                     updateHeaderWhenUpOrCancel(mMovingSum);
                 } else {
-                    updateFooterWhenUpOrCancel();
+                    updateFooterWhenUpOrCancel(mMovingSum);
                 }
                 mIsBeingDragged = false;
                 break;
@@ -331,6 +332,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         }
         final int offsetResult = mFooter.moving(this, total, offset);
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
+        mTargetOffsetTop = mTargetView.getTop();
         if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {
             mFooter.setStatus(IPullToRefreshFooter.STATUS_READY);
         } else {
@@ -341,16 +343,16 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     /**
      * 取消时候进行的操作
      */
-    private void updateFooterWhenUpOrCancel() {
+    private void updateFooterWhenUpOrCancel(final int total) {
         if (mFooter == null) {
             Log.i(TAG, "updateFooterWhenUpOrCancel: mFooter is null");
             return;
         }
 
-        if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {
+        if (mFooter.isEffectiveDistance(this, mTargetView, total)) {
             mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
-            int offset = mFooter.loading(this, mTargetView, mMovingSum);
-            ViewHelper.movingY(mTargetView, offset);
+            int offset = mFooter.loading(this, mTargetView, total);
+            ViewHelper.movingY(mTargetView, offset, mRefreshListener);
             notifyLoadMore();
         } else {
             int offset = mFooter.cancelLoadMore(this, mTargetView);
@@ -624,8 +626,19 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
         @Override
         public void onAnimationEnd(Animator animation) {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
-            requestLayout();
+
+            if (mHeader != null) {
+                mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+                mHeaderOffsetBottom = mHeader.getBottom();
+            }
+
+            if (mFooter != null) {
+                mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+            }
+
+            if (mTargetView != null) {
+                mTargetOffsetTop = mTargetView.getTop();
+            }
         }
 
         @Override
@@ -642,7 +655,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     // NestedScrollingParent
     @Override
     public boolean onStartNestedScroll(View child, View target, int nestedScrollAxes) {
-        Log.i(TAG, "onStartNestedScroll: ");
         // Enable && 没有在刷新OrLoading && 是Y轴滑动
         return isEnabled()
                 && !isRefreshingOrLoading()
@@ -655,24 +667,35 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         mNestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes);
         // Dispatch up to the nested parent
         startNestedScroll(axes & ViewCompat.SCROLL_AXIS_VERTICAL);
-        mTotalUnconsumed = 0;
+        mRefreshTotalUnconsumed = 0;
+        mLoadMoreTotalUnconsumed = 0;
         mNestedScrollInProgress = true;
     }
 
     @Override
     public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
-        Log.i(TAG, "onNestedPreScroll: dy = " + dy);
         // If we are in the middle of consuming, a scroll, then we want to move the spinner back up
         // before allowing the list to scroll
-        if (dy > 0 && mTotalUnconsumed > 0) {
-            if (dy > mTotalUnconsumed) {
-                consumed[1] = dy - (int) mTotalUnconsumed;
-                mTotalUnconsumed = 0;
+        if (dy > 0 && mRefreshTotalUnconsumed > 0) {
+            if (dy > mRefreshTotalUnconsumed) {
+                consumed[1] = dy - (int) mRefreshTotalUnconsumed;
+                mRefreshTotalUnconsumed = 0;
             } else {
-                mTotalUnconsumed -= dy;
+                mRefreshTotalUnconsumed -= dy;
                 consumed[1] = dy;
             }
-            movingHeader((int) mTotalUnconsumed, dy);
+            movingHeader((int) mRefreshTotalUnconsumed, dy);
+        }
+
+        if (dy < 0 && mLoadMoreTotalUnconsumed > 0) {
+            if (Math.abs(dy) > mLoadMoreTotalUnconsumed) {
+                consumed[1] = dy - (int) mLoadMoreTotalUnconsumed;
+                mLoadMoreTotalUnconsumed = 0;
+            } else {
+                mLoadMoreTotalUnconsumed -= Math.abs(dy);
+                consumed[1] = dy;
+            }
+            movingFooter((int) mLoadMoreTotalUnconsumed, dy);
         }
 
         // Now let our nested parent consume the leftovers
@@ -686,8 +709,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     @Override
     public void onNestedScroll(final View target, final int dxConsumed, final int dyConsumed,
                                final int dxUnconsumed, final int dyUnconsumed) {
-        Log.i(TAG, "onNestedScroll: ==================================================");
-        Log.i(TAG, "onNestedScroll: dyConsumed = " + dyConsumed + " dyUnconsumed = " + dyUnconsumed);
         // Dispatch up to the nested parent first
         dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 mParentOffsetInWindow);
@@ -698,33 +719,36 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         // 'offset in window 'functionality to see if we have been moved from the event.
         // This is a decent indication of whether we should take over the event stream or not.
         final int dy = dyUnconsumed + mParentOffsetInWindow[1];
-        Log.i(TAG, "onNestedScroll: dy = " + dy);
-        Log.i(TAG, "onNestedScroll: can up = " + canRefresh());
 
         if (dy < 0 && canRefresh()) {
-            mTotalUnconsumed += Math.abs(dy);
-            Log.i(TAG, "onNestedScroll: mTotalUnconsumed = " + mTotalUnconsumed);
-            movingHeader((int) mTotalUnconsumed, dy);
+            mRefreshTotalUnconsumed += Math.abs(dy);
+            movingHeader((int) mRefreshTotalUnconsumed, dy);
+        } else if (dy > 0 && canLoadMore()) {
+            mLoadMoreTotalUnconsumed += Math.abs(dy);
+            movingFooter((int) mLoadMoreTotalUnconsumed, dy);
         }
     }
 
     @Override
     public int getNestedScrollAxes() {
-        Log.i(TAG, "getNestedScrollAxes: ");
         return mNestedScrollingParentHelper.getNestedScrollAxes();
     }
 
     @Override
     public void onStopNestedScroll(View target) {
-        Log.i(TAG, "onStopNestedScroll: ");
         mNestedScrollingParentHelper.onStopNestedScroll(target);
         mNestedScrollInProgress = false;
 
         // Finish the spinner for nested scrolling if we ever consumed any
         // unconsumed nested scroll
-        if (mTotalUnconsumed > 0) {
-            updateHeaderWhenUpOrCancel((int) mTotalUnconsumed);
-            mTotalUnconsumed = 0;
+        if (mRefreshTotalUnconsumed > 0) {
+            updateHeaderWhenUpOrCancel((int) mRefreshTotalUnconsumed);
+            mRefreshTotalUnconsumed = 0;
+        }
+
+        if (mLoadMoreTotalUnconsumed > 0) {
+            updateFooterWhenUpOrCancel((int) mLoadMoreTotalUnconsumed);
+            mLoadMoreTotalUnconsumed = 0;
         }
         // Dispatch up our nested parent
         stopNestedScroll();

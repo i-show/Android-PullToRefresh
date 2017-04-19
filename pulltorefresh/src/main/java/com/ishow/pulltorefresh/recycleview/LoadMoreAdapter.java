@@ -183,7 +183,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         if (Math.abs(total) >= getMaxPullUpHeight()) {
             return 0;
         } else {
-            return offset;
+            return -offset;
         }
     }
 
