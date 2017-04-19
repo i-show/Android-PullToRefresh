@@ -1,7 +1,9 @@
 package com.ishow.pulltorefresh;
 
+import android.animation.Animator;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -60,6 +62,11 @@ public interface IPullToRefreshHeader {
     int getStatus();
 
     /**
+     * 获取距离顶部的距离
+     */
+    int getTop();
+
+    /**
      * 移动
      *
      * @param parent 父View
@@ -72,7 +79,7 @@ public interface IPullToRefreshHeader {
     /**
      * 刷新中....
      */
-    int refreshing(ViewGroup parent, final int total);
+    int refreshing(ViewGroup parent, final int total, @Nullable Animator.AnimatorListener listener);
 
     /**
      * 取消刷新

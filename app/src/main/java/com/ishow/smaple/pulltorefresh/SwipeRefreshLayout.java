@@ -69,6 +69,7 @@ import android.widget.AbsListView;
  */
 public class SwipeRefreshLayout extends ViewGroup implements NestedScrollingParent,
         NestedScrollingChild {
+    private static final String TAG = "SwipeRefreshLayout";
     // Maps to ProgressBar.Large style
     public static final int LARGE = MaterialProgressDrawable.LARGE;
     // Maps to ProgressBar default style
@@ -551,13 +552,6 @@ public class SwipeRefreshLayout extends ViewGroup implements NestedScrollingPare
         mProgress.setBackgroundColor(color);
     }
 
-    /**
-     * @deprecated Use {@link #setColorSchemeResources(int...)}
-     */
-    @Deprecated
-    public void setColorScheme(@ColorInt int... colors) {
-        setColorSchemeResources(colors);
-    }
 
     /**
      * Set the color resources used in the progress animation from color resources.
@@ -764,6 +758,8 @@ public class SwipeRefreshLayout extends ViewGroup implements NestedScrollingPare
                 break;
         }
 
+        Log.i(TAG, "onInterceptTouchEvent: mIsBeingDragged =  " + mIsBeingDragged);
+
         return mIsBeingDragged;
     }
 
@@ -784,12 +780,14 @@ public class SwipeRefreshLayout extends ViewGroup implements NestedScrollingPare
 
     @Override
     public boolean onStartNestedScroll(View child, View target, int nestedScrollAxes) {
+        Log.i(TAG, "onStartNestedScroll: ");
         return isEnabled() && !mReturningToStart && !mRefreshing
                 && (nestedScrollAxes & ViewCompat.SCROLL_AXIS_VERTICAL) != 0;
     }
 
     @Override
     public void onNestedScrollAccepted(View child, View target, int axes) {
+        Log.i(TAG, "onNestedScrollAccepted: ");
         // Reset the counter of how much leftover scroll needs to be consumed.
         mNestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes);
         // Dispatch up to the nested parent
@@ -800,6 +798,7 @@ public class SwipeRefreshLayout extends ViewGroup implements NestedScrollingPare
 
     @Override
     public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
+        Log.i(TAG, "onNestedPreScroll: ");
         // If we are in the middle of consuming, a scroll, then we want to move the spinner back up
         // before allowing the list to scroll
         if (dy > 0 && mTotalUnconsumed > 0) {
@@ -832,11 +831,13 @@ public class SwipeRefreshLayout extends ViewGroup implements NestedScrollingPare
 
     @Override
     public int getNestedScrollAxes() {
+        Log.i(TAG, "getNestedScrollAxes: ");
         return mNestedScrollingParentHelper.getNestedScrollAxes();
     }
 
     @Override
     public void onStopNestedScroll(View target) {
+        Log.i(TAG, "onStopNestedScroll: ");
         mNestedScrollingParentHelper.onStopNestedScroll(target);
         mNestedScrollInProgress = false;
         // Finish the spinner for nested scrolling if we ever consumed any
@@ -852,6 +853,7 @@ public class SwipeRefreshLayout extends ViewGroup implements NestedScrollingPare
     @Override
     public void onNestedScroll(final View target, final int dxConsumed, final int dyConsumed,
                                final int dxUnconsumed, final int dyUnconsumed) {
+        Log.i(TAG, "onNestedScroll: ");
         // Dispatch up to the nested parent first
         dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 mParentOffsetInWindow);

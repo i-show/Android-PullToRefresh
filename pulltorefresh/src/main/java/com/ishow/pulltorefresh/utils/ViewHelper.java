@@ -36,6 +36,8 @@ public class ViewHelper {
 
     @SuppressWarnings("WeakerAccess")
     public static void movingY(final @NonNull View view, @IntRange(from = 1) int duration, int distance, Animator.AnimatorListener listener) {
+        view.clearAnimation();
+        
         ValueAnimator animator = ValueAnimator.ofInt(distance);
         animator.setTarget(view);
         animator.setDuration(duration);
