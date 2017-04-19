@@ -64,7 +64,7 @@ public interface IPullToRefreshHeader {
     /**
      * 获取距离顶部的距离
      */
-    int getTop();
+    int getBottom();
 
     /**
      * 移动
