@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         adapter.plusData(getData(adapter));
-                        if (adapter.getItemCount() >= 15) {
+                        if (adapter.getItemCount() >= 80) {
                             pullToRefreshView.setLoadMoreEnd();
                         }
                     }
@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         if (adapter != null) {
             size = adapter.getItemCount();
         }
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 14; i++) {
             int index = size + i;
             list.add("postion " + index);
         }

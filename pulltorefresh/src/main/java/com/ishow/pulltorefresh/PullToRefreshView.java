@@ -277,17 +277,11 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             return;
         }
 
-        Log.i(TAG, "movingHeader:  ==================== ");
-        Log.i(TAG, "movingHeader:  total = " + total);
-        Log.i(TAG, "movingHeader:  offset = " + offset);
-
         final int offsetResult = mHeader.moving(this, total, offset);
         mHeaderOffsetBottom = mHeader.getBottom();
 
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
         mTargetOffsetTop = mTargetView.getTop();
-        Log.i(TAG, "movingHeader: mHeaderOffsetBottom = " + mHeaderOffsetBottom);
-        Log.i(TAG, "movingHeader: mTargetOffsetTop = " + mTargetOffsetTop);
 
         if (mHeader.isEffectiveDistance(total)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_READY);
