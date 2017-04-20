@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                         pullToRefreshView.setLoadMoreNormal();
                         adapter.setData(getData(null));
                     }
-                }, 3000);
+                }, 15000);
             }
 
             @Override

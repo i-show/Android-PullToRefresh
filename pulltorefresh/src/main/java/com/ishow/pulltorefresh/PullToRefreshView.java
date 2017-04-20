@@ -226,6 +226,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 if (mIsBeingDraggedDown) {
                     movingHeader(mMovingSum, (int) offset);
                 } else if (mIsBeingDraggedUp) {
+                    Log.i(TAG, "onTouchEvent: --------------------------");
                     movingFooter(mMovingSum, (int) offset);
                 }
                 break;
@@ -282,6 +283,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
         mTargetOffsetTop = mTargetView.getTop();
+        Log.i(TAG, "movingHeader: mTargetOffsetTop ==" + mTargetOffsetTop);
 
         if (mHeader.isEffectiveDistance(total)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_READY);
@@ -327,6 +329,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         final int offsetResult = mFooter.moving(this, mTargetView, total, offset);
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
         mTargetOffsetTop = mTargetView.getTop();
+        Log.i(TAG, "movingFooter:  mTargetOffsetTop = " + mTargetOffsetTop);
         if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {
             mFooter.setStatus(IPullToRefreshFooter.STATUS_READY);
         } else {
@@ -565,6 +568,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
             if (mTargetView != null) {
                 mTargetOffsetTop = mTargetView.getTop();
+                Log.i(TAG, "mRefreshListener, onAnimationEnd: mTargetOffsetTop =" + mTargetOffsetTop);
             }
         }
 
@@ -597,6 +601,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
             if (mTargetView != null) {
                 mTargetOffsetTop = mTargetView.getTop();
+                Log.i(TAG, "mSetRefreshNormalListener onAnimationEnd: mTargetOffsetTop = " + mTargetOffsetTop);
             }
         }
 
@@ -635,6 +640,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
             if (mTargetView != null) {
                 mTargetOffsetTop = mTargetView.getTop();
+                Log.i(TAG, "mSetLoadNormalListener onAnimationEnd: mTargetOffsetTop = " + mTargetOffsetTop);
             }
         }
 
@@ -681,8 +687,10 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 mRefreshTotalUnconsumed -= dy;
                 consumed[1] = dy;
             }
+            Log.i(TAG, "onNestedPreScroll: 11111111111111111111111");
             movingHeader((int) mRefreshTotalUnconsumed, dy);
         }
+
 
         if (dy < 0 && mLoadMoreTotalUnconsumed > 0 && canLoadMore()) {
             if (Math.abs(dy) > mLoadMoreTotalUnconsumed) {
@@ -692,6 +700,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 mLoadMoreTotalUnconsumed -= Math.abs(dy);
                 consumed[1] = dy;
             }
+            Log.i(TAG, "onNestedPreScroll: 2222222222222222222222");
             movingFooter((int) mLoadMoreTotalUnconsumed, dy);
         }
 
@@ -716,11 +725,13 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         // This is a decent indication of whether we should take over the event stream or not.
         final int dy = dyUnconsumed + mParentOffsetInWindow[1];
 
-        if (dy < 0 && canRefresh()) {
+        if (dy < 0 && canRefresh() && !isLoading()) {
             mRefreshTotalUnconsumed += Math.abs(dy);
+            Log.i(TAG, "onNestedScroll: 333333333333333333333333");
             movingHeader((int) mRefreshTotalUnconsumed, dy);
-        } else if (dy > 0 && canLoadMore()) {
+        } else if (dy > 0 && canLoadMore() && !isRefreshing()) {
             mLoadMoreTotalUnconsumed += Math.abs(dy);
+            Log.i(TAG, "onNestedScroll: 444444444444444444444444");
             movingFooter((int) mLoadMoreTotalUnconsumed, dy);
         }
     }
@@ -738,11 +749,13 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         // Finish the spinner for nested scrolling if we ever consumed any
         // unconsumed nested scroll
         if (mRefreshTotalUnconsumed > 0) {
+            Log.i(TAG, "onStopNestedScroll: 5555555555555555555");
             updateHeaderWhenUpOrCancel((int) mRefreshTotalUnconsumed);
             mRefreshTotalUnconsumed = 0;
         }
 
         if (mLoadMoreTotalUnconsumed > 0) {
+            Log.i(TAG, "onStopNestedScroll: 666666666666666666666");
             updateFooterWhenUpOrCancel((int) mLoadMoreTotalUnconsumed);
             mLoadMoreTotalUnconsumed = 0;
         }
