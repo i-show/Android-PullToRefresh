@@ -539,13 +539,16 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     }
 
     private boolean isRefreshingOrLoading() {
-        if (mHeader != null && mHeader.getStatus() == IPullToRefreshHeader.STATUS_REFRESHING) {
-            return true;
-        } else if (mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_LOADING) {
-            return true;
-        } else {
-            return false;
-        }
+        return isRefreshing() || isLoading();
+    }
+
+
+    private boolean isRefreshing() {
+        return mHeader != null && mHeader.getStatus() == IPullToRefreshHeader.STATUS_REFRESHING;
+    }
+
+    private boolean isLoading() {
+        return mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_LOADING;
     }
 
     private Animator.AnimatorListener mRefreshListener = new Animator.AnimatorListener() {
@@ -670,7 +673,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
         // If we are in the middle of consuming, a scroll, then we want to move the spinner back up
         // before allowing the list to scroll
-        if (dy > 0 && mRefreshTotalUnconsumed > 0) {
+        if (dy > 0 && mRefreshTotalUnconsumed > 0 && canRefresh()) {
             if (dy > mRefreshTotalUnconsumed) {
                 consumed[1] = dy - (int) mRefreshTotalUnconsumed;
                 mRefreshTotalUnconsumed = 0;
@@ -681,7 +684,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             movingHeader((int) mRefreshTotalUnconsumed, dy);
         }
 
-        if (dy < 0 && mLoadMoreTotalUnconsumed > 0) {
+        if (dy < 0 && mLoadMoreTotalUnconsumed > 0 && canLoadMore()) {
             if (Math.abs(dy) > mLoadMoreTotalUnconsumed) {
                 consumed[1] = dy - (int) mLoadMoreTotalUnconsumed;
                 mLoadMoreTotalUnconsumed = 0;
@@ -704,8 +707,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     public void onNestedScroll(final View target, final int dxConsumed, final int dyConsumed,
                                final int dxUnconsumed, final int dyUnconsumed) {
         // Dispatch up to the nested parent first
-        dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
-                mParentOffsetInWindow);
+        dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, mParentOffsetInWindow);
 
         // This is a bit of a hack. Nested scrolling works from the bottom up, and as we are
         // sometimes between two nested scrolling views, we need a way to be able to know when any
