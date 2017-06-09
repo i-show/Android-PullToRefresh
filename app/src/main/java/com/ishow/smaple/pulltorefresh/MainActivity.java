@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                         pullToRefreshView.setLoadMoreNormal();
                         adapter.setData(getData(null));
                     }
-                }, 15000);
+                }, 5000);
             }
 
             @Override
@@ -55,26 +55,17 @@ public class MainActivity extends AppCompatActivity {
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        adapter.plusData(getData(adapter));
                         if (adapter.getItemCount() >= 80) {
                             pullToRefreshView.setLoadMoreEnd();
                         } else {
                             pullToRefreshView.setLoadMoreSuccess();
                         }
+                        adapter.plusData(getData(adapter));
                     }
                 }, 3000);
             }
         });
 
-
-        View swipeTest = findViewById(R.id.swipe_test);
-        swipeTest.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, SwipeActivity.class);
-                startActivity(intent);
-            }
-        });
 
     }
 

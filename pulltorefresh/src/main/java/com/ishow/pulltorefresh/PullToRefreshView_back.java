@@ -16,6 +16,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 
 import com.ishow.pulltorefresh.utils.ViewHelper;
 
@@ -23,7 +24,7 @@ import com.ishow.pulltorefresh.utils.ViewHelper;
  * Created by Bright.Yu on 2017/3/20.
  * PullToRefresh
  */
-public class PullToRefreshView extends ViewGroup implements NestedScrollingParent, NestedScrollingChild {
+public class PullToRefreshView_back extends ViewGroup implements NestedScrollingParent, NestedScrollingChild {
     private static final String TAG = "PullToRefreshView";
     /**
      * 设置了时间的时候进行配置一个时间间隔
@@ -70,21 +71,34 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     private int mHeaderOffsetBottom;
     private int mTargetOffsetTop;
 
+    // If nested scrolling is enabled, the total amount that needed to be
+    // consumed by this as the nested scrolling parent is used in place of the
+    // overscroll determined by MOVE events in the onTouch handler
+    private float mRefreshTotalUnconsumed;
+    private float mLoadMoreTotalUnconsumed;
+    private final NestedScrollingParentHelper mNestedScrollingParentHelper;
+    private final NestedScrollingChildHelper mNestedScrollingChildHelper;
+    private final int[] mParentScrollConsumed = new int[2];
+    private final int[] mParentOffsetInWindow = new int[2];
+    private boolean mNestedScrollInProgress;
 
-    public PullToRefreshView(Context context) {
+    public PullToRefreshView_back(Context context) {
         this(context, null);
     }
 
-    public PullToRefreshView(Context context, AttributeSet attrs) {
+    public PullToRefreshView_back(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public PullToRefreshView(Context context, AttributeSet attrs, int defStyle) {
+    public PullToRefreshView_back(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop();
         mHandler = new Handler();
+
+        mNestedScrollingParentHelper = new NestedScrollingParentHelper(this);
+        mNestedScrollingChildHelper = new NestedScrollingChildHelper(this);
     }
 
 
@@ -132,6 +146,9 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         final int width = getMeasuredWidth();
         final int height = getMeasuredHeight();
+        Log.i(TAG, "onLayout: ============================");
+        Log.i(TAG, "onLayout: mHeaderOffsetBottom = " + mHeaderOffsetBottom);
+        Log.i(TAG, "onLayout: mTargetOffsetTop = " + mTargetOffsetTop);
         if (mHeader != null) {
             View view = mHeader.getView();
             view.layout(0, -view.getMeasuredHeight() + mHeaderOffsetBottom, view.getMeasuredWidth(), mHeaderOffsetBottom);
@@ -150,15 +167,9 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        // 只有当Header和Footer 都ok的时候才能进行 下拉或者上拉
-        if (!isAlreadyStatus()) {
-            return false;
-        }
-
-        final boolean canLoadMore = canLoadMore();
         final boolean canRefesh = canRefresh();
-
-        if (!isEnabled() || (!canLoadMore && !canRefesh)) {
+        final boolean canLoadMore = canLoadMore();
+        if (!isEnabled() || (!canRefesh && !canLoadMore) || mNestedScrollInProgress) {
             return false;
         }
 
@@ -192,12 +203,9 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (!isAlreadyStatus()) {
-            return false;
-        }
-
         final boolean canRefesh = canRefresh();
         final boolean canLoadMore = canLoadMore();
+        //if (!isEnabled() || (!canRefesh && !canLoadMore) || mNestedScrollInProgress) {
         if (!isEnabled() || (!canRefesh && !canLoadMore)) {
             return false;
         }
@@ -219,22 +227,34 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 if (mIsBeingDraggedDown) {
                     movingHeader(mMovingSum, (int) offset);
                 } else if (mIsBeingDraggedUp) {
+                    Log.i(TAG, "onTouchEvent: --------------------------");
                     movingFooter(mMovingSum, (int) offset);
                 }
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (mIsBeingDraggedDown) {
+                if (mMovingSum > 0) {
                     updateHeaderWhenUpOrCancel(mMovingSum);
-                } else if (mIsBeingDraggedUp) {
+                } else {
                     updateFooterWhenUpOrCancel(mMovingSum);
                 }
                 mIsBeingDragged = false;
-                mIsBeingDraggedUp = false;
-                mIsBeingDraggedDown = false;
                 break;
         }
         return true;
+    }
+
+    @Override
+    public void requestDisallowInterceptTouchEvent(boolean b) {
+        // if this is a List < L or another view that doesn't support nested
+        // scrolling, ignore this request so that the vertical scroll event
+        // isn't stolen
+        if ((android.os.Build.VERSION.SDK_INT < 21 && mTargetView instanceof AbsListView)
+                || (mTargetView != null && !ViewCompat.isNestedScrollingEnabled(mTargetView))) {
+            // Nope.
+        } else {
+            super.requestDisallowInterceptTouchEvent(b);
+        }
     }
 
 
@@ -279,7 +299,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             return;
         }
 
-        if (total > 0 && mHeader.isEffectiveDistance(total)) {
+        if (mHeader.isEffectiveDistance(total)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
             int offset = mHeader.refreshing(this, total, mRefreshListener);
             mHeaderOffsetBottom = mHeader.getBottom();
@@ -310,6 +330,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         final int offsetResult = mFooter.moving(this, mTargetView, total, offset);
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
         mTargetOffsetTop = mTargetView.getTop();
+        Log.i(TAG, "movingFooter:  mTargetOffsetTop = " + mTargetOffsetTop);
         if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {
             mFooter.setStatus(IPullToRefreshFooter.STATUS_READY);
         } else {
@@ -326,7 +347,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             return;
         }
 
-        if (total < 0 && mFooter.isEffectiveDistance(this, mTargetView, total)) {
+        if (mFooter.isEffectiveDistance(this, mTargetView, total)) {
             mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
             int offset = mFooter.loading(this, mTargetView, total);
             ViewHelper.movingY(mTargetView, offset, mRefreshListener);
@@ -356,12 +377,20 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         }
     }
 
-
     /**
      * 是否可以进行刷新操作
      */
     private boolean canRefresh() {
-        return mHeader != null && !canScrollUp();
+        if (mHeader == null) {
+            return false;
+        }
+
+        final int status = mHeader.getStatus();
+
+        boolean isStatusOk = status == IPullToRefreshHeader.STATUS_NORMAL ||
+                status == IPullToRefreshHeader.STATUS_READY;
+
+        return !canScrollUp() && isStatusOk;
     }
 
 
@@ -369,7 +398,17 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
      * 是否可以进行加载更多操作
      */
     private boolean canLoadMore() {
-        return mFooter != null && mFooter.getStatus() != IPullToRefreshFooter.STATUS_END && !canScrollDown();
+
+        if (mFooter == null) {
+            return false;
+        }
+
+        final int status = mFooter.getStatus();
+
+        boolean isStatusOk = (status == IPullToRefreshFooter.STATUS_NORMAL ||
+                status == IPullToRefreshFooter.STATUS_READY);
+
+        return !canScrollDown() && isStatusOk;
     }
 
     /**
@@ -396,7 +435,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mHeader.refreshSuccess(PullToRefreshView.this);
+                int offset = mHeader.refreshSuccess(PullToRefreshView_back.this);
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -412,7 +451,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mHeader.refreshSuccess(PullToRefreshView.this);
+                int offset = mHeader.refreshSuccess(PullToRefreshView_back.this);
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -462,7 +501,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mFooter.loadFailed(PullToRefreshView.this);
+                int offset = mFooter.loadFailed(PullToRefreshView_back.this);
                 ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
             }
         }, ANI_INTERVAL);
@@ -481,7 +520,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mFooter.loadSuccess(PullToRefreshView.this);
+                int offset = mFooter.loadSuccess(PullToRefreshView_back.this);
                 ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
             }
         }, ANI_INTERVAL);
@@ -503,28 +542,10 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         }
     }
 
-    /**
-     * 状态已经可以进行下拉刷新或者上拉加载更多
-     */
-    private boolean isAlreadyStatus() {
-        return isAlreadyHeaderStatus() && isAlreadyFooterStatus();
+    private boolean isRefreshingOrLoading() {
+        return isRefreshing() || isLoading();
     }
 
-    private boolean isAlreadyHeaderStatus() {
-        if (mHeader == null) {
-            return false;
-        }
-        final int status = mHeader.getStatus();
-        return status == IPullToRefreshHeader.STATUS_NORMAL || status == IPullToRefreshHeader.STATUS_READY;
-    }
-
-    private boolean isAlreadyFooterStatus() {
-        if (mFooter == null) {
-            return false;
-        }
-        final int status = mFooter.getStatus();
-        return status == IPullToRefreshFooter.STATUS_NORMAL || status == IPullToRefreshFooter.STATUS_READY || status == IPullToRefreshFooter.STATUS_END;
-    }
 
     private boolean isRefreshing() {
         return mHeader != null && mHeader.getStatus() == IPullToRefreshHeader.STATUS_REFRESHING;
@@ -634,5 +655,175 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
         }
     };
+
+    // NestedScrollingParent
+    @Override
+    public boolean onStartNestedScroll(View child, View target, int nestedScrollAxes) {
+        // Enable && 没有在刷新OrLoading && 是Y轴滑动
+        return isEnabled()
+                && !isRefreshingOrLoading()
+                && (nestedScrollAxes & ViewCompat.SCROLL_AXIS_VERTICAL) != 0;
+    }
+
+    @Override
+    public void onNestedScrollAccepted(View child, View target, int axes) {
+        // Reset the counter of how much leftover scroll needs to be consumed.
+        mNestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes);
+        // Dispatch up to the nested parent
+        startNestedScroll(axes & ViewCompat.SCROLL_AXIS_VERTICAL);
+        mRefreshTotalUnconsumed = 0;
+        mLoadMoreTotalUnconsumed = 0;
+        mNestedScrollInProgress = true;
+    }
+
+    @Override
+    public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
+        // If we are in the middle of consuming, a scroll, then we want to move the spinner back up
+        // before allowing the list to scroll
+        if (dy > 0 && mRefreshTotalUnconsumed > 0 && canRefresh()) {
+            if (dy > mRefreshTotalUnconsumed) {
+                consumed[1] = dy - (int) mRefreshTotalUnconsumed;
+                mRefreshTotalUnconsumed = 0;
+            } else {
+                mRefreshTotalUnconsumed -= dy;
+                consumed[1] = dy;
+            }
+            Log.i(TAG, "onNestedPreScroll: 11111111111111111111111");
+            movingHeader((int) mRefreshTotalUnconsumed, dy);
+        }
+
+
+        if (dy < 0 && mLoadMoreTotalUnconsumed > 0 && canLoadMore()) {
+            if (Math.abs(dy) > mLoadMoreTotalUnconsumed) {
+                consumed[1] = dy - (int) mLoadMoreTotalUnconsumed;
+                mLoadMoreTotalUnconsumed = 0;
+            } else {
+                mLoadMoreTotalUnconsumed -= Math.abs(dy);
+                consumed[1] = dy;
+            }
+            Log.i(TAG, "onNestedPreScroll: 2222222222222222222222");
+            movingFooter((int) mLoadMoreTotalUnconsumed, dy);
+        }
+
+        // Now let our nested parent consume the leftovers
+        final int[] parentConsumed = mParentScrollConsumed;
+        if (dispatchNestedPreScroll(dx - consumed[0], dy - consumed[1], parentConsumed, null)) {
+            consumed[0] += parentConsumed[0];
+            consumed[1] += parentConsumed[1];
+        }
+    }
+
+    @Override
+    public void onNestedScroll(final View target, final int dxConsumed, final int dyConsumed,
+                               final int dxUnconsumed, final int dyUnconsumed) {
+        // Dispatch up to the nested parent first
+        dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, mParentOffsetInWindow);
+
+        // This is a bit of a hack. Nested scrolling works from the bottom up, and as we are
+        // sometimes between two nested scrolling views, we need a way to be able to know when any
+        // nested scrolling parent has stopped handling events. We do that by using the
+        // 'offset in window 'functionality to see if we have been moved from the event.
+        // This is a decent indication of whether we should take over the event stream or not.
+        final int dy = dyUnconsumed + mParentOffsetInWindow[1];
+
+        if (dy < 0 && canRefresh() && !isLoading()) {
+            mRefreshTotalUnconsumed += Math.abs(dy);
+            Log.i(TAG, "onNestedScroll: 333333333333333333333333");
+            movingHeader((int) mRefreshTotalUnconsumed, dy);
+        } else if (dy > 0 && canLoadMore() && !isRefreshing()) {
+            mLoadMoreTotalUnconsumed += Math.abs(dy);
+            Log.i(TAG, "onNestedScroll: 444444444444444444444444");
+            movingFooter((int) mLoadMoreTotalUnconsumed, dy);
+        }
+    }
+
+    @Override
+    public int getNestedScrollAxes() {
+        return mNestedScrollingParentHelper.getNestedScrollAxes();
+    }
+
+    @Override
+    public void onStopNestedScroll(View target) {
+        mNestedScrollingParentHelper.onStopNestedScroll(target);
+        mNestedScrollInProgress = false;
+
+        // Finish the spinner for nested scrolling if we ever consumed any
+        // unconsumed nested scroll
+        if (mRefreshTotalUnconsumed > 0) {
+            Log.i(TAG, "onStopNestedScroll: 5555555555555555555");
+            updateHeaderWhenUpOrCancel((int) mRefreshTotalUnconsumed);
+            mRefreshTotalUnconsumed = 0;
+        }
+
+        if (mLoadMoreTotalUnconsumed > 0) {
+            Log.i(TAG, "onStopNestedScroll: 666666666666666666666");
+            updateFooterWhenUpOrCancel((int) mLoadMoreTotalUnconsumed);
+            mLoadMoreTotalUnconsumed = 0;
+        }
+        // Dispatch up our nested parent
+        stopNestedScroll();
+    }
+
+
+    // NestedScrollingChild
+    @Override
+    public void setNestedScrollingEnabled(boolean enabled) {
+        mNestedScrollingChildHelper.setNestedScrollingEnabled(enabled);
+    }
+
+    @Override
+    public boolean isNestedScrollingEnabled() {
+        return mNestedScrollingChildHelper.isNestedScrollingEnabled();
+    }
+
+    @Override
+    public boolean startNestedScroll(int axes) {
+        return mNestedScrollingChildHelper.startNestedScroll(axes);
+    }
+
+    @Override
+    public void stopNestedScroll() {
+        mNestedScrollingChildHelper.stopNestedScroll();
+    }
+
+    @Override
+    public boolean hasNestedScrollingParent() {
+        return mNestedScrollingChildHelper.hasNestedScrollingParent();
+    }
+
+    @Override
+    public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
+                                        int dyUnconsumed, int[] offsetInWindow) {
+        return mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed,
+                dxUnconsumed, dyUnconsumed, offsetInWindow);
+    }
+
+    @Override
+    public boolean dispatchNestedPreScroll(int dx, int dy, int[] consumed, int[] offsetInWindow) {
+        return mNestedScrollingChildHelper.dispatchNestedPreScroll(
+                dx, dy, consumed, offsetInWindow);
+    }
+
+    @Override
+    public boolean onNestedPreFling(View target, float velocityX,
+                                    float velocityY) {
+        return dispatchNestedPreFling(velocityX, velocityY);
+    }
+
+    @Override
+    public boolean onNestedFling(View target, float velocityX, float velocityY,
+                                 boolean consumed) {
+        return dispatchNestedFling(velocityX, velocityY, consumed);
+    }
+
+    @Override
+    public boolean dispatchNestedFling(float velocityX, float velocityY, boolean consumed) {
+        return mNestedScrollingChildHelper.dispatchNestedFling(velocityX, velocityY, consumed);
+    }
+
+    @Override
+    public boolean dispatchNestedPreFling(float velocityX, float velocityY) {
+        return mNestedScrollingChildHelper.dispatchNestedPreFling(velocityX, velocityY);
+    }
 
 }
