@@ -1,6 +1,4 @@
 <resources>
-    <string name="app_name">pulltorefresh</string>
-
     <string name="pulltorefresh_header_normal">下拉刷新</string>
     <string name="pulltorefresh_header_ready">松开刷新</string>
     <string name="pulltorefresh_header_loading">正在努力刷新中&#8230;</string>

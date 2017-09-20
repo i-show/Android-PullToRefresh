@@ -18,7 +18,7 @@ public class ViewHelper {
     /**
      * 每1000 像素 需要移动的时间
      */
-    private static final int DEFAULT_1000_PIXELS_TIMES = 1600;
+    private static final int DEFAULT_1000_PIXELS_TIMES = 1200;
 
     /**
      * View 进行移动
@@ -37,7 +37,7 @@ public class ViewHelper {
     @SuppressWarnings("WeakerAccess")
     public static void movingY(final @NonNull View view, @IntRange(from = 1) int duration, int distance, Animator.AnimatorListener listener) {
         view.clearAnimation();
-        
+
         ValueAnimator animator = ValueAnimator.ofInt(distance);
         animator.setTarget(view);
         animator.setDuration(duration);

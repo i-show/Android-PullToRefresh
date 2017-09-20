@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
         LoadMoreAdapter wrapper = new LoadMoreAdapter(this, adapter);
         GridLayoutManager manager = new GridLayoutManager(this, 2);
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.pull_to_refresh_scroll_view);
         recyclerView.setLayoutManager(manager);
         recyclerView.setAdapter(wrapper);
 
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                         pullToRefreshView.setLoadMoreNormal();
                         adapter.setData(getData(null));
                     }
-                }, 5000);
+                }, 600);
             }
 
             @Override
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         adapter.plusData(getData(adapter));
                     }
-                }, 3000);
+                }, 600);
             }
         });
 
@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         if (adapter != null) {
             size = adapter.getItemCount();
         }
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 30; i++) {
             int index = size + i;
             list.add("postion " + index);
         }

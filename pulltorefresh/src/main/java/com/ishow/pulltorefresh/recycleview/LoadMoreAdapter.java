@@ -181,7 +181,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     @Override
     public int moving(ViewGroup parent, View targetView, int total, int offset) {
-        if (Math.abs(total) >= getMaxPullUpHeight()) {
+        if (mLoadMoreView != null && Math.abs(total) >= getMaxPullUpHeight()) {
             return 0;
         } else if (targetView.getTop() > offset) {
             return targetView.getTop();
