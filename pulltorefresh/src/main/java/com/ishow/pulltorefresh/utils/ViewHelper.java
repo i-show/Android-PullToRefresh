@@ -5,8 +5,10 @@ import android.animation.ValueAnimator;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
+import android.util.Log;
 import android.view.View;
 
+import com.ishow.pulltorefresh.AbsAnimatorListener;
 import com.ishow.pulltorefresh.R;
 
 /**
@@ -29,13 +31,13 @@ public class ViewHelper {
     }
 
     @SuppressWarnings("WeakerAccess")
-    public static void movingY(final @NonNull View view, int distance, Animator.AnimatorListener listener) {
+    public static void movingY(final @NonNull View view, int distance, final AbsAnimatorListener listener) {
         int duration = calculatingDuration(distance);
         movingY(view, duration, distance, listener);
     }
 
     @SuppressWarnings("WeakerAccess")
-    public static void movingY(final @NonNull View view, @IntRange(from = 1) int duration, int distance, Animator.AnimatorListener listener) {
+    public static void movingY(final @NonNull View view, @IntRange(from = 1) int duration, int distance, final AbsAnimatorListener listener) {
         view.clearAnimation();
 
         ValueAnimator animator = ValueAnimator.ofInt(distance);
@@ -56,6 +58,9 @@ public class ViewHelper {
                 int offset = move - last;
                 view.setTag(R.id.tag_pull_to_refresh_moving_y, move);
                 ViewCompat.offsetTopAndBottom(view, offset);
+                if (listener != null) {
+                    listener.onAnimationUpdate(animation);
+                }
             }
         });
     }

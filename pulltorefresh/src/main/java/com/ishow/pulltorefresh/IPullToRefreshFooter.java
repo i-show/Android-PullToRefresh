@@ -100,4 +100,6 @@ public interface IPullToRefreshFooter {
      * 获取上拉的最大高度
      */
     int getMaxPullUpHeight();
+
+    void setEnabled(boolean enable);
 }

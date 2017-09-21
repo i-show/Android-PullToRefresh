@@ -26,7 +26,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     /**
      * 设置了时间的时候进行配置一个时间间隔
      */
-    private static final int ANI_INTERVAL = 500;
+    private static final int ANI_INTERVAL = 800;
     /**
      * HeaderView
      */
@@ -95,6 +95,9 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         mTouchSlop = configuration.getScaledTouchSlop();
         mHandler = new Handler();
 
+        isLoadMoreEnable = true;
+        isRefreshEnable = true;
+
         mLoadingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_LOADING);
         mRefreshingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_REFRESHING);
         mRefreshingHeaderListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_HEADER_REFRESHING);
@@ -149,6 +152,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        Log.i("nian", "onLayout: ");
         final int width = getMeasuredWidth();
         final int height = getMeasuredHeight();
         if (mHeader != null) {
@@ -168,7 +172,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
 
     @Override
-    @SuppressWarnings("RedundantIfStatement")
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         // 只有当Header和Footer 都ok的时候才能进行 下拉或者上拉
         if (!isAlreadyStatus()) {
@@ -258,24 +261,29 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     }
 
 
-    @SuppressWarnings("unused")
     public boolean isLoadMoreEnable() {
         return isLoadMoreEnable;
     }
 
-    @SuppressWarnings("unused")
-    public void setLoadMoreEnable(boolean loadMoreEnable) {
-        isLoadMoreEnable = loadMoreEnable;
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setLoadMoreEnable(enabled);
+        setRefreshEnable(enabled);
     }
 
-    @SuppressWarnings("unused")
+    public void setLoadMoreEnable(boolean loadMoreEnable) {
+        isLoadMoreEnable = loadMoreEnable;
+        if (mFooter != null) mFooter.setEnabled(loadMoreEnable);
+    }
+
     public boolean isRefreshEnable() {
         return isRefreshEnable;
     }
 
-    @SuppressWarnings("unused")
     public void setRefreshEnable(boolean refreshEnable) {
         isRefreshEnable = refreshEnable;
+        if (mHeader != null) mHeader.setEnabled(refreshEnable);
     }
 
     @SuppressWarnings("unused")
@@ -407,7 +415,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
      * 是否可以进行加载更多操作
      */
     private boolean canLoadMore() {
-        return isLoadMoreEnable && mFooter != null && mFooter.getStatus() != IPullToRefreshFooter.STATUS_END && !canScrollDown();
+        return mFooter != null && mFooter.getStatus() != IPullToRefreshFooter.STATUS_END && !canScrollDown();
     }
 
     /**
@@ -664,6 +672,11 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 mTargetOffsetTop = mTargetView.getTop();
                 Log.i(TAG, "mSetLoadNormalListener onAnimationEnd: mTargetOffsetTop = " + mTargetOffsetTop);
             }
+        }
+
+        @Override
+        public void onAnimationUpdate(ValueAnimator animation) {
+            computeStatus();
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.ishow.pulltorefresh;
 
 import android.animation.Animator;
+import android.animation.ValueAnimator;
 
 /**
  * Created by yuhaiyang on 2017/9/20.
@@ -8,6 +9,9 @@ import android.animation.Animator;
  */
 
 public abstract class AbsAnimatorListener implements Animator.AnimatorListener {
+
+    public abstract void onAnimationUpdate(ValueAnimator animation);
+
     @Override
     public void onAnimationStart(Animator animation) {
 

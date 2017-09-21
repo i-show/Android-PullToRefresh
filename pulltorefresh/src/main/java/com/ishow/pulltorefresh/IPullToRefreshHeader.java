@@ -79,7 +79,7 @@ public interface IPullToRefreshHeader {
     /**
      * 刷新中....
      */
-    int refreshing(ViewGroup parent, final int total, @Nullable Animator.AnimatorListener listener);
+    int refreshing(ViewGroup parent, final int total, @Nullable AbsAnimatorListener listener);
 
     /**
      * 取消刷新
@@ -110,4 +110,6 @@ public interface IPullToRefreshHeader {
      * 判断当前移动距离是否是有效距离
      */
     boolean isEffectiveDistance(int movingDistance);
+
+    void setEnabled(boolean enabled);
 }

@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.ishow.pulltorefresh.AbsAnimatorListener;
 import com.ishow.pulltorefresh.IPullToRefreshHeader;
 import com.ishow.pulltorefresh.R;
 import com.ishow.pulltorefresh.utils.ViewHelper;
@@ -159,7 +160,7 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
 
 
     @Override
-    public int refreshing(ViewGroup parent, int total, @Nullable Animator.AnimatorListener listener) {
+    public int refreshing(ViewGroup parent, int total, @Nullable AbsAnimatorListener listener) {
         int offset = -getTop();
         ViewHelper.movingY(this, offset, listener);
         return offset;

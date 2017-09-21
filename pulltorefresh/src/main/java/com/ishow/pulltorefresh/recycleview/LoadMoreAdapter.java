@@ -51,7 +51,11 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
      */
     private int mStatus;
 
+    private boolean isEnabled;
+
     public LoadMoreAdapter(@NonNull Context context, @NonNull RecyclerView.Adapter adapter) {
+        isEnabled = true;
+        
         mInnerAdapter = adapter;
         mInnerAdapter.registerAdapterDataObserver(mDataObserver);
 
@@ -65,7 +69,20 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
 
     @Override
+    public int getItemCount() {
+        if (isEnabled) {
+            return mInnerAdapter.getItemCount() + 1;
+        } else {
+            return mInnerAdapter.getItemCount();
+        }
+    }
+
+    @Override
     public int getItemViewType(int position) {
+        if (!isEnabled) {
+            return mInnerAdapter.getItemViewType(position);
+        }
+
         int realCount = mInnerAdapter.getItemCount();
         if (position >= realCount) {
             return TYPE_LOAD_MORE;
@@ -159,11 +176,6 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public int getItemCount() {
-        return mInnerAdapter.getItemCount() + 1;
-    }
-
-    @Override
     public void init(ViewGroup parent) {
         mStatus = IPullToRefreshFooter.STATUS_NORMAL;
     }
@@ -223,6 +235,14 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     @Override
     public int getMaxPullUpHeight() {
         return mLoadMoreView.getMeasuredHeight() * 3;
+    }
+
+    @Override
+    public void setEnabled(boolean enable) {
+        isEnabled = enable;
+        if (mLoadMoreView != null) {
+            mLoadMoreView.setVisibility(enable ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void setFooterStatus(int status) {
