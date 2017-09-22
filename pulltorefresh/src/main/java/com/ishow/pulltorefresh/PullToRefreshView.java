@@ -438,7 +438,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
      */
     @SuppressWarnings("unused")
     public void setRefreshSuccess() {
-        if (mHeader.getStatus() != IPullToRefreshHeader.STATUS_REFRESHING) {
+        if (mHeader == null || mHeader.getStatus() != IPullToRefreshHeader.STATUS_REFRESHING) {
             return;
         }
         mHeader.setStatus(IPullToRefreshHeader.STATUS_SUCCESS);
@@ -446,6 +446,25 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             @Override
             public void run() {
                 int offset = mHeader.refreshSuccess(PullToRefreshView.this);
+                ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
+            }
+        }, ANI_INTERVAL);
+
+    }
+
+    /**
+     * 刷新成功
+     */
+    @SuppressWarnings("unused")
+    public void setRefreshNormal() {
+        if (mHeader == null) {
+            return;
+        }
+        mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int offset = -mHeader.getBottom();
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -477,26 +496,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         }
     }
 
-    /**
-     * 加载完成
-     */
-    @SuppressWarnings("unused")
-    public void setLoadMoreEnd() {
-        if (mTargetView == null) {
-            return;
-        }
-
-        Object object = mTargetView.getTag(R.id.tag_pull_to_refresh_animation);
-        if (object != null) {
-            ValueAnimator animator = (ValueAnimator) object;
-            animator.removeAllListeners();
-        }
-
-        if (mFooter != null) {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_END);
-        }
-        requestLayout();
-    }
 
     /**
      * 下拉加载失败
@@ -534,6 +533,27 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
             }
         }, ANI_INTERVAL);
+    }
+
+    /**
+     * 加载完成
+     */
+    @SuppressWarnings("unused")
+    public void setLoadMoreEnd() {
+        if (mTargetView == null) {
+            return;
+        }
+
+        Object object = mTargetView.getTag(R.id.tag_pull_to_refresh_animation);
+        if (object != null) {
+            ValueAnimator animator = (ValueAnimator) object;
+            animator.removeAllListeners();
+        }
+
+        if (mFooter != null) {
+            mFooter.setStatus(IPullToRefreshFooter.STATUS_END);
+        }
+        requestLayout();
     }
 
     public void setOnPullToRefreshListener(OnPullToRefreshListener listener) {
@@ -664,7 +684,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 mHeaderOffsetBottom = mHeader.getBottom();
             }
 
-            if (mFooter != null) {
+            if (mFooter != null && mFooter.getStatus() != IPullToRefreshFooter.STATUS_END) {
                 mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
             }
 

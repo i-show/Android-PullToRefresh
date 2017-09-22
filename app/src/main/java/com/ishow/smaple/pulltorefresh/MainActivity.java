@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         pullToRefreshView.setFooter(wrapper);
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
             @Override
-            public void onRefresh(View v) {
+            public void onRefresh(PullToRefreshView v) {
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onLoadMore(View v) {
+            public void onLoadMore(PullToRefreshView v) {
                 v.postDelayed(new Runnable() {
                     @Override
                     public void run() {

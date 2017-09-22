@@ -24,7 +24,7 @@ import android.view.View;
 @SuppressWarnings("WeakerAccess,unused")
 public interface OnPullToRefreshListener {
 
-    void onRefresh(View v);
+    void onRefresh(PullToRefreshView view);
 
-    void onLoadMore(View v);
+    void onLoadMore(PullToRefreshView view);
 }
