@@ -55,7 +55,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public LoadMoreAdapter(@NonNull Context context, @NonNull RecyclerView.Adapter adapter) {
         isEnabled = true;
-        
+
         mInnerAdapter = adapter;
         mInnerAdapter.registerAdapterDataObserver(mDataObserver);
 
@@ -265,8 +265,8 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 mLoadMoreTextView.setText(R.string.pulltorefresh_footer_loading);
                 break;
             case STATUS_SUCCESS:
-                mLoadMoreLoadingView.setVisibility(View.GONE);
-                mLoadMoreTextView.setText(R.string.pulltorefresh_footer_success);
+                // mLoadMoreLoadingView.setVisibility(View.GONE);
+                // mLoadMoreTextView.setText(R.string.pulltorefresh_footer_success);
                 break;
             case STATUS_FAILED:
                 mLoadMoreLoadingView.setVisibility(View.GONE);

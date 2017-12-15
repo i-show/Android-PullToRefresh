@@ -3,11 +3,15 @@ package com.ishow.pulltorefresh;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.view.NestedScrollingChild;
 import android.support.v4.view.NestedScrollingParent;
 import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -62,6 +66,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     private boolean mIsBeingDraggedDown;
     private boolean isRefreshEnable;
     private boolean isLoadMoreEnable;
+    private boolean isAutoLoadMore;
     /**
      * 监听
      */
@@ -94,9 +99,11 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop();
         mHandler = new Handler();
-
-        isLoadMoreEnable = true;
-        isRefreshEnable = true;
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.PullToRefreshView);
+        isLoadMoreEnable = a.getBoolean(R.styleable.PullToRefreshView_loadMoreEnable, true);
+        isRefreshEnable = a.getBoolean(R.styleable.PullToRefreshView_refreshEnable, true);
+        isAutoLoadMore = a.getBoolean(R.styleable.PullToRefreshView_autoLoadMoreEnable, true);
+        a.recycle();
 
         mLoadingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_LOADING);
         mRefreshingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_REFRESHING);
@@ -118,6 +125,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             if (mScrollView == null) {
                 mScrollView = mTargetView;
             }
+            setAutoLoadMore(isAutoLoadMore);
         }
     }
 
@@ -152,7 +160,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        Log.i("nian", "onLayout: ");
         final int width = getMeasuredWidth();
         final int height = getMeasuredHeight();
         if (mHeader != null) {
@@ -284,6 +291,18 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     public void setRefreshEnable(boolean refreshEnable) {
         isRefreshEnable = refreshEnable;
         if (mHeader != null) mHeader.setEnabled(refreshEnable);
+    }
+
+    public void setAutoLoadMore(boolean status) {
+        isAutoLoadMore = status;
+        if (mScrollView != null && mScrollView instanceof RecyclerView) {
+            RecyclerView recyclerView = (RecyclerView) mScrollView;
+            if (isAutoLoadMore) {
+                recyclerView.addOnScrollListener(mRecycleScrollListener);
+            } else {
+                recyclerView.removeOnScrollListener(mRecycleScrollListener);
+            }
+        }
     }
 
     @SuppressWarnings("unused")
@@ -419,6 +438,14 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     }
 
     /**
+     * 是否已经加载完毕
+     */
+    private boolean isLoadEnd() {
+        return mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_END;
+    }
+
+
+    /**
      * 是否可以上滑
      * 下拉刷新的时候使用
      */
@@ -532,7 +559,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 int offset = mFooter.loadSuccess(PullToRefreshView.this);
                 ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
             }
-        }, ANI_INTERVAL);
+        }, 50);
     }
 
     /**
@@ -595,6 +622,26 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         return status == IPullToRefreshFooter.STATUS_NORMAL || status == IPullToRefreshFooter.STATUS_READY || status == IPullToRefreshFooter.STATUS_END;
     }
 
+    private void setRefreshing() {
+        computeStatus();
+        notifyRefresh();
+    }
+
+    private void setLoading() {
+        computeStatus();
+        notifyLoadMore();
+    }
+
+    private void computeStatus() {
+        if (mHeader != null) {
+            mHeaderOffsetBottom = mHeader.getBottom();
+        }
+
+        if (mTargetView != null) {
+            mTargetOffsetTop = mTargetView.getTop();
+            Log.i(TAG, "computeStatus, onAnimationEnd: mTargetOffsetTop =" + mTargetOffsetTop);
+        }
+    }
 
     private class PullToRefreshAnimatorListener extends AbsAnimatorListener {
         /**
@@ -645,27 +692,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             }
         }
 
-        private void computeStatus() {
-            if (mHeader != null) {
-                mHeaderOffsetBottom = mHeader.getBottom();
-            }
-
-            if (mTargetView != null) {
-                mTargetOffsetTop = mTargetView.getTop();
-                Log.i(TAG, "computeStatus, onAnimationEnd: mTargetOffsetTop =" + mTargetOffsetTop);
-            }
-        }
-
-        private void setRefreshing() {
-            computeStatus();
-            notifyRefresh();
-        }
-
-        private void setLoading() {
-            computeStatus();
-            notifyLoadMore();
-        }
-
         private void setRefreshNormal() {
             if (mHeader != null) {
                 mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
@@ -699,4 +725,44 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             computeStatus();
         }
     }
+
+
+    private RecyclerView.OnScrollListener mRecycleScrollListener = new RecyclerView.OnScrollListener() {
+        @Override
+        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+            if (!isLoadMoreEnable || !isAutoLoadMore || mFooter == null || mFooter.getStatus() != IPullToRefreshFooter.STATUS_NORMAL) {
+                return;
+            }
+
+            RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+            if (layoutManager == null) {
+                Log.i(TAG, "onScrollStateChanged:  layoutManager is null");
+                return;
+            }
+
+            if (layoutManager instanceof GridLayoutManager) {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) layoutManager;
+                //获取最后一个可见view的位置
+                final int lastPosition = gridLayoutManager.findLastVisibleItemPosition();
+                final int itemCount = gridLayoutManager.getItemCount();
+                final int spanCount = gridLayoutManager.getSpanCount();
+                // 提前2个进行预加载
+                if (lastPosition + spanCount * 2 >= itemCount - 1) {
+                    mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
+                    setLoading();
+                }
+            } else if (layoutManager instanceof LinearLayoutManager) {
+                LinearLayoutManager linearManager = (LinearLayoutManager) layoutManager;
+                //获取最后一个可见view的位置
+                final int lastPosition = linearManager.findLastVisibleItemPosition();
+                final int itemCount = linearManager.getItemCount();
+                // 提前2个进行预加载
+                if (lastPosition >= itemCount - 3) {
+                    mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
+                    setLoading();
+                }
+            }
+        }
+    };
 }
