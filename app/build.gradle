@@ -149,15 +149,6 @@ android {
             renameAPK(android, variant, output);
         }
     }
-
-    // delete unaligned files
-    android.applicationVariants.all { variant ->
-        variant.assemble.doLast {
-            variant.outputs.each { output ->
-                deleteUnaligned(output);
-            }
-        }
-    }
 }
 
 
