@@ -17,12 +17,10 @@
 <resources>
 
     <attr name="loadMoreEnable" format="boolean" />
-    <attr name="autoLoadMoreEnable" format="boolean" />
     <attr name="refreshEnable" format="boolean" />
 
     <declare-styleable name="PullToRefreshView">
         <attr name="loadMoreEnable" />
-        <attr name="autoLoadMoreEnable" />
         <attr name="refreshEnable" />
     </declare-styleable>
 

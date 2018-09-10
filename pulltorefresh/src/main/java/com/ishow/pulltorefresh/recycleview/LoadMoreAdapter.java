@@ -100,13 +100,14 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         return position >= realCount;
     }
 
+    @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         switch (viewType) {
             case TYPE_LOAD_MORE:
                 mLoadMoreView = mLayoutInflater.inflate(R.layout.pull_to_refresh_footer, parent, false);
-                mLoadMoreTextView = (TextView) mLoadMoreView.findViewById(R.id.pull_to_refesh_footer_text);
-                mLoadMoreLoadingView = (ImageView) mLoadMoreView.findViewById(R.id.pull_to_refesh_footer_loading);
+                mLoadMoreTextView = mLoadMoreView.findViewById(R.id.pull_to_refesh_footer_text);
+                mLoadMoreLoadingView = mLoadMoreView.findViewById(R.id.pull_to_refesh_footer_loading);
                 return new ViewHolder(mLoadMoreView);
             default:
                 return mInnerAdapter.onCreateViewHolder(parent, viewType);
@@ -114,7 +115,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         int itemType = getItemViewType(position);
         switch (itemType) {
             case TYPE_LOAD_MORE:
@@ -128,7 +129,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
         mInnerAdapter.onAttachedToRecyclerView(recyclerView);
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
 
@@ -154,16 +155,17 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public void onDetachedFromRecyclerView(RecyclerView recyclerView) {
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onDetachedFromRecyclerView(recyclerView);
         mInnerAdapter.unregisterAdapterDataObserver(mDataObserver);
     }
 
     @Override
-    public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
+    public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
         mInnerAdapter.onViewAttachedToWindow(holder);
         if (isLoadMoreItem(holder.getLayoutPosition())) {
             setFullSpan(holder);
+            setFooterStatus(mStatus);
         }
     }
 
@@ -192,17 +194,6 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public int moving(ViewGroup parent, View targetView, int total, int offset) {
-        if (mLoadMoreView != null && Math.abs(total) >= getMaxPullUpHeight()) {
-            return 0;
-        } else if (targetView.getTop() > offset) {
-            return targetView.getTop();
-        } else {
-            return -offset;
-        }
-    }
-
-    @Override
     public int loading(ViewGroup parent, View targetView, int total) {
         return parent.getHeight() - targetView.getBottom();
     }
@@ -222,21 +213,6 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         return 0;
     }
 
-
-    @Override
-    public boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance) {
-        if (targetView == null || mLoadMoreView == null) {
-            return false;
-        } else {
-            return targetView.getBottom() > mLoadMoreView.getMeasuredHeight();
-        }
-    }
-
-    @Override
-    public int getMaxPullUpHeight() {
-        return mLoadMoreView.getMeasuredHeight() * 3;
-    }
-
     @Override
     public void setEnabled(boolean enable) {
         isEnabled = enable;
@@ -251,10 +227,12 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
         switch (status) {
             case STATUS_NORMAL:
+                mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.setVisibility(View.GONE);
                 mLoadMoreTextView.setText(R.string.pulltorefresh_footer_normal);
                 break;
             case STATUS_READY:
+                mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.setVisibility(View.GONE);
                 mLoadMoreTextView.setText(R.string.pulltorefresh_footer_ready);
                 break;
@@ -264,15 +242,13 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 mLoadMoreLoadingView.setVisibility(View.VISIBLE);
                 mLoadMoreTextView.setText(R.string.pulltorefresh_footer_loading);
                 break;
-            case STATUS_SUCCESS:
-                // mLoadMoreLoadingView.setVisibility(View.GONE);
-                // mLoadMoreTextView.setText(R.string.pulltorefresh_footer_success);
-                break;
             case STATUS_FAILED:
+                mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.setVisibility(View.GONE);
                 mLoadMoreTextView.setText(R.string.pulltorefresh_footer_fail);
                 break;
             case STATUS_END:
+                mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.setVisibility(View.GONE);
                 mLoadMoreTextView.setText(R.string.pulltorefresh_footer_end);
                 break;

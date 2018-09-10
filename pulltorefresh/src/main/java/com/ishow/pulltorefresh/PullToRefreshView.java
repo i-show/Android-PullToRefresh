@@ -2,6 +2,7 @@ package com.ishow.pulltorefresh;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Handler;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 
+import com.ishow.pulltorefresh.classic.ClassicHeader;
 import com.ishow.pulltorefresh.utils.ViewHelper;
 
 /**
@@ -62,11 +64,8 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     private int mTouchSlop;
 
     private boolean mIsBeingDragged;
-    private boolean mIsBeingDraggedUp;
-    private boolean mIsBeingDraggedDown;
     private boolean isRefreshEnable;
     private boolean isLoadMoreEnable;
-    private boolean isAutoLoadMore;
     /**
      * 监听
      */
@@ -79,7 +78,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     private int mTargetOffsetTop;
 
 
-    private PullToRefreshAnimatorListener mLoadingListener;
     private PullToRefreshAnimatorListener mRefreshingListener;
     private PullToRefreshAnimatorListener mRefreshingHeaderListener;
     private PullToRefreshAnimatorListener mSetLoadNormalListener;
@@ -95,17 +93,15 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
     public PullToRefreshView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop();
         mHandler = new Handler();
+
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.PullToRefreshView);
         isLoadMoreEnable = a.getBoolean(R.styleable.PullToRefreshView_loadMoreEnable, true);
         isRefreshEnable = a.getBoolean(R.styleable.PullToRefreshView_refreshEnable, true);
-        isAutoLoadMore = a.getBoolean(R.styleable.PullToRefreshView_autoLoadMoreEnable, true);
         a.recycle();
 
-        mLoadingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_LOADING);
         mRefreshingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_REFRESHING);
         mRefreshingHeaderListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_HEADER_REFRESHING);
         mSetLoadNormalListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_LOAD_NORMAL);
@@ -125,7 +121,14 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             if (mScrollView == null) {
                 mScrollView = mTargetView;
             }
-            setAutoLoadMore(isAutoLoadMore);
+            if (mScrollView == null) {
+                return;
+            }
+
+            if (mScrollView instanceof RecyclerView) {
+                RecyclerView recyclerView = (RecyclerView) mScrollView;
+                recyclerView.addOnScrollListener(mRecycleScrollListener);
+            }
         }
     }
 
@@ -185,18 +188,15 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             return false;
         }
 
-        final boolean canLoadMore = canLoadMore();
         final boolean canRefresh = canRefresh();
 
-        if (!isEnabled() || (!canLoadMore && !canRefresh)) {
+        if (!isEnabled() || !canRefresh) {
             return false;
         }
 
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mIsBeingDragged = false;
-                mIsBeingDraggedUp = false;
-                mIsBeingDraggedDown = false;
                 mInitialDownY = ev.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -206,29 +206,21 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 mIsBeingDragged = false;
-                mIsBeingDraggedUp = false;
-                mIsBeingDraggedDown = false;
                 break;
         }
 
-        if (mIsBeingDraggedUp && canLoadMore) {
-            return true;
-        } else if (mIsBeingDraggedDown && canRefresh) {
-            return true;
-        } else {
-            return false;
-        }
+        return mIsBeingDragged;
     }
 
     @Override
+    @SuppressLint("ClickableViewAccessibility")
     public boolean onTouchEvent(MotionEvent event) {
         if (!isAlreadyStatus()) {
             return false;
         }
 
         final boolean canRefesh = canRefresh();
-        final boolean canLoadMore = canLoadMore();
-        if (!isEnabled() || (!canRefesh && !canLoadMore)) {
+        if (!isEnabled() || !canRefesh) {
             return false;
         }
 
@@ -242,26 +234,15 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 if (!mIsBeingDragged) {
                     break;
                 }
-
                 mMovingSum = (int) (y - mBeingDraggedY);
                 final float offset = mLastY - y;
                 mLastY = y;
-                if (mIsBeingDraggedDown) {
-                    movingHeader(mMovingSum, (int) offset);
-                } else if (mIsBeingDraggedUp) {
-                    movingFooter(mMovingSum, (int) offset);
-                }
+                movingHeader(mMovingSum, (int) offset);
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (mIsBeingDraggedDown) {
-                    updateHeaderWhenUpOrCancel(mMovingSum);
-                } else if (mIsBeingDraggedUp) {
-                    updateFooterWhenUpOrCancel(mMovingSum);
-                }
+                updateHeaderWhenUpOrCancel(mMovingSum);
                 mIsBeingDragged = false;
-                mIsBeingDraggedUp = false;
-                mIsBeingDraggedDown = false;
                 break;
         }
         return true;
@@ -293,17 +274,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         if (mHeader != null) mHeader.setEnabled(refreshEnable);
     }
 
-    public void setAutoLoadMore(boolean status) {
-        isAutoLoadMore = status;
-        if (mScrollView != null && mScrollView instanceof RecyclerView) {
-            RecyclerView recyclerView = (RecyclerView) mScrollView;
-            if (isAutoLoadMore) {
-                recyclerView.addOnScrollListener(mRecycleScrollListener);
-            } else {
-                recyclerView.removeOnScrollListener(mRecycleScrollListener);
-            }
-        }
-    }
 
     @SuppressWarnings("unused")
     public void setHeader(@NonNull IPullToRefreshHeader header) {
@@ -331,7 +301,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
         mTargetOffsetTop = mTargetView.getTop();
-        Log.i(TAG, "movingHeader: mTargetOffsetTop ==" + mTargetOffsetTop);
 
         if (mHeader.isEffectiveDistance(total)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_READY);
@@ -366,58 +335,14 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     }
 
     /**
-     * Footer的移动
-     */
-    private void movingFooter(final int total, final int offset) {
-        if (mFooter == null) {
-            Log.i(TAG, "movingFooter: mFooter is null");
-            return;
-        }
-        final int offsetResult = mFooter.moving(this, mTargetView, total, offset);
-        ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
-        mTargetOffsetTop = mTargetView.getTop();
-        if (mFooter.isEffectiveDistance(this, mTargetView, mMovingSum)) {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_READY);
-        } else {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
-        }
-    }
-
-    /**
-     * 取消时候进行的操作
-     */
-    private void updateFooterWhenUpOrCancel(final int total) {
-        if (mFooter == null) {
-            Log.i(TAG, "updateFooterWhenUpOrCancel: mFooter is null");
-            return;
-        }
-
-        if (total < 0 && mFooter.isEffectiveDistance(this, mTargetView, total)) {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
-            int offset = mFooter.loading(this, mTargetView, total);
-            ViewHelper.movingY(mTargetView, offset, mLoadingListener);
-        } else {
-            int offset = mFooter.cancelLoadMore(this, mTargetView);
-            ViewHelper.movingY(mTargetView, offset, mSetLoadNormalListener);
-        }
-    }
-
-    /**
      * 判断是否可以进行拖拽
      */
     private void startDragging(float y) {
         final float yDiff = y - mInitialDownY;
-        if (Math.abs(yDiff) > mTouchSlop && !mIsBeingDragged) {
+        if (yDiff > mTouchSlop && !mIsBeingDragged) {
             mLastY = y;
             mIsBeingDragged = true;
             mBeingDraggedY = y;
-            if (yDiff > 0) {
-                // 开始下拉刷新
-                mIsBeingDraggedDown = true;
-            } else {
-                // 开始上拉
-                mIsBeingDraggedUp = true;
-            }
         }
     }
 
@@ -552,7 +477,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             Log.i(TAG, "setLoadMoreSuccess: mFooter is null");
             return;
         }
-        mFooter.setStatus(IPullToRefreshFooter.STATUS_SUCCESS);
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -602,6 +526,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
     /**
      * 状态已经可以进行下拉刷新或者上拉加载更多
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isAlreadyStatus() {
         return isEnabled() && isAlreadyHeaderStatus() && isAlreadyFooterStatus();
     }
@@ -731,7 +656,7 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         @Override
         public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
-            if (!isLoadMoreEnable || !isAutoLoadMore || mFooter == null || mFooter.getStatus() != IPullToRefreshFooter.STATUS_NORMAL) {
+            if (!isLoadMoreEnable || mFooter == null || mFooter.getStatus() != IPullToRefreshFooter.STATUS_NORMAL) {
                 return;
             }
 
@@ -747,8 +672,8 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 final int lastPosition = gridLayoutManager.findLastVisibleItemPosition();
                 final int itemCount = gridLayoutManager.getItemCount();
                 final int spanCount = gridLayoutManager.getSpanCount();
-                // 提前2个进行预加载
-                if (lastPosition + spanCount * 2 >= itemCount - 1) {
+                // 提前3个进行预加载
+                if (lastPosition + spanCount * 3 >= itemCount - 1) {
                     mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
                     setLoading();
                 }
@@ -757,8 +682,8 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
                 //获取最后一个可见view的位置
                 final int lastPosition = linearManager.findLastVisibleItemPosition();
                 final int itemCount = linearManager.getItemCount();
-                // 提前2个进行预加载
-                if (lastPosition >= itemCount - 3) {
+                // 提前3个进行预加载
+                if (lastPosition >= itemCount - 4) {
                     mFooter.setStatus(IPullToRefreshFooter.STATUS_LOADING);
                     setLoading();
                 }

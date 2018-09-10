@@ -30,11 +30,11 @@ public class MainActivity extends AppCompatActivity {
         LoadMoreAdapter wrapper = new LoadMoreAdapter(this, adapter);
         GridLayoutManager manager = new GridLayoutManager(this, 2);
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.pull_to_refresh_scroll_view);
+        RecyclerView recyclerView = findViewById(R.id.pull_to_refresh_scroll_view);
         recyclerView.setLayoutManager(manager);
         recyclerView.setAdapter(wrapper);
 
-        final PullToRefreshView pullToRefreshView = (PullToRefreshView) findViewById(R.id.pulltorefresh);
+        final PullToRefreshView pullToRefreshView = findViewById(R.id.pulltorefresh);
         pullToRefreshView.setHeader(header);
         pullToRefreshView.setFooter(wrapper);
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                         pullToRefreshView.setLoadMoreNormal();
                         adapter.setData(getData(null));
                     }
-                }, 600);
+                }, 300);
             }
 
             @Override
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         adapter.plusData(getData(adapter));
                     }
-                }, 600);
+                }, 300);
             }
         });
 

@@ -26,19 +26,15 @@ public interface IPullToRefreshFooter {
      */
     int STATUS_LOADING = 2;
     /**
-     * 刷新成功
-     */
-    int STATUS_SUCCESS = 3;
-    /**
      * 刷新失败
      */
-    int STATUS_FAILED = 4;
+    int STATUS_FAILED = 3;
     /**
      * 全部加载完毕
      */
-    int STATUS_END = 5;
+    int STATUS_END = 4;
 
-    @IntDef({STATUS_NORMAL, STATUS_READY, STATUS_LOADING, STATUS_SUCCESS, STATUS_FAILED, STATUS_END})
+    @IntDef({STATUS_NORMAL, STATUS_READY, STATUS_LOADING, STATUS_FAILED, STATUS_END})
     @Retention(RetentionPolicy.SOURCE)
     @interface status {
     }
@@ -57,17 +53,6 @@ public interface IPullToRefreshFooter {
      * 获取当前状态
      */
     int getStatus();
-
-
-    /**
-     * 移动
-     *
-     * @param parent 父View
-     * @param total  总共移动了多少距离
-     * @param offset 当前事件移动的距离
-     * @return header移动的距离
-     */
-    int moving(ViewGroup parent, View targetView, final int total, final int offset);
 
     /**
      * 刷新中....
@@ -88,18 +73,6 @@ public interface IPullToRefreshFooter {
      * 加载失败
      */
     int loadFailed(ViewGroup parent);
-
-
-    /**
-     * 判断当前移动距离是否是有效距离
-     */
-    boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance);
-
-
-    /**
-     * 获取上拉的最大高度
-     */
-    int getMaxPullUpHeight();
 
     void setEnabled(boolean enable);
 }
