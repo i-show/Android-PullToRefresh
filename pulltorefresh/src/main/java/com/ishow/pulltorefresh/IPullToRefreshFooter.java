@@ -43,27 +43,14 @@ public interface IPullToRefreshFooter {
      * 初始化
      */
     void init(ViewGroup parent);
-
     /**
      * 设置状态
      */
     void setStatus(@IPullToRefreshFooter.status int status);
-
     /**
      * 获取当前状态
      */
     int getStatus();
-
-    /**
-     * 刷新中....
-     */
-    int loading(ViewGroup parent, View targetView, final int total);
-
-    /**
-     * 取消刷新
-     */
-    int cancelLoadMore(ViewGroup parent, View targetView);
-
     /**
      * 加载成功
      */
@@ -73,6 +60,13 @@ public interface IPullToRefreshFooter {
      * 加载失败
      */
     int loadFailed(ViewGroup parent);
-
+    /**
+     * 是否可用
+     */
     void setEnabled(boolean enable);
+
+    /**
+     * 设置点击Footer的事件
+     */
+    void setOnClickFooterListener(View.OnClickListener listener);
 }

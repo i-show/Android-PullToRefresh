@@ -7,8 +7,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.v4.view.NestedScrollingChild;
-import android.support.v4.view.NestedScrollingParent;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,14 +18,13 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 
-import com.ishow.pulltorefresh.classic.ClassicHeader;
 import com.ishow.pulltorefresh.utils.ViewHelper;
 
 /**
  * Created by Bright.Yu on 2017/3/20.
  * PullToRefresh
  */
-public class PullToRefreshView extends ViewGroup implements NestedScrollingParent, NestedScrollingChild {
+public class PullToRefreshView extends ViewGroup implements View.OnClickListener {
     private static final String TAG = "PullToRefreshView";
     /**
      * 设置了时间的时候进行配置一个时间间隔
@@ -41,10 +38,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
      * TargetView
      */
     private View mTargetView;
-    /**
-     * 可以滑动的View
-     */
-    private View mScrollView;
     /**
      * FooterView
      */
@@ -117,24 +110,19 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             throw new IllegalStateException("need a child");
         } else if (childCount == 1) {
             mTargetView = getChildAt(0);
-            mScrollView = findViewById(R.id.pull_to_refresh_scroll_view);
-            if (mScrollView == null) {
-                mScrollView = mTargetView;
+            View scrollView = findViewById(R.id.pull_to_refresh_scroll_view);
+            if (scrollView == null) {
+                scrollView = mTargetView;
             }
-            if (mScrollView == null) {
+            if (scrollView == null) {
                 return;
             }
 
-            if (mScrollView instanceof RecyclerView) {
-                RecyclerView recyclerView = (RecyclerView) mScrollView;
+            if (scrollView instanceof RecyclerView) {
+                RecyclerView recyclerView = (RecyclerView) scrollView;
                 recyclerView.addOnScrollListener(mRecycleScrollListener);
             }
         }
-    }
-
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
     }
 
     @Override
@@ -219,8 +207,8 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
             return false;
         }
 
-        final boolean canRefesh = canRefresh();
-        if (!isEnabled() || !canRefesh) {
+        final boolean canRefresh = canRefresh();
+        if (!isEnabled() || !canRefresh) {
             return false;
         }
 
@@ -354,17 +342,10 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         return isRefreshEnable && mHeader != null && !canScrollUp();
     }
 
-
-    /**
-     * 是否可以进行加载更多操作
-     */
-    private boolean canLoadMore() {
-        return mFooter != null && mFooter.getStatus() != IPullToRefreshFooter.STATUS_END && !canScrollDown();
-    }
-
     /**
      * 是否已经加载完毕
      */
+    @SuppressWarnings("unused")
     private boolean isLoadEnd() {
         return mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_END;
     }
@@ -376,13 +357,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
      */
     private boolean canScrollUp() {
         return mTargetView != null && ViewCompat.canScrollVertically(mTargetView, -1);
-    }
-
-    /**
-     * 是否可以下滑
-     */
-    private boolean canScrollDown() {
-        return mScrollView != null && ViewCompat.canScrollVertically(mScrollView, 1);
     }
 
     /**
@@ -547,6 +521,10 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         return status == IPullToRefreshFooter.STATUS_NORMAL || status == IPullToRefreshFooter.STATUS_READY || status == IPullToRefreshFooter.STATUS_END;
     }
 
+    private boolean isCanLoadMore() {
+        return mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_NORMAL;
+    }
+
     private void setRefreshing() {
         computeStatus();
         notifyRefresh();
@@ -565,6 +543,13 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
         if (mTargetView != null) {
             mTargetOffsetTop = mTargetView.getTop();
             Log.i(TAG, "computeStatus, onAnimationEnd: mTargetOffsetTop =" + mTargetOffsetTop);
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (isCanLoadMore() && isAlreadyHeaderStatus()) {
+            setLoading();
         }
     }
 
@@ -625,7 +610,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
             if (mTargetView != null) {
                 mTargetOffsetTop = mTargetView.getTop();
-                Log.i(TAG, "mSetRefreshNormalListener onAnimationEnd: mTargetOffsetTop = " + mTargetOffsetTop);
             }
         }
 
@@ -641,7 +625,6 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
             if (mTargetView != null) {
                 mTargetOffsetTop = mTargetView.getTop();
-                Log.i(TAG, "mSetLoadNormalListener onAnimationEnd: mTargetOffsetTop = " + mTargetOffsetTop);
             }
         }
 
@@ -654,9 +637,9 @@ public class PullToRefreshView extends ViewGroup implements NestedScrollingParen
 
     private RecyclerView.OnScrollListener mRecycleScrollListener = new RecyclerView.OnScrollListener() {
         @Override
-        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
-            if (!isLoadMoreEnable || mFooter == null || mFooter.getStatus() != IPullToRefreshFooter.STATUS_NORMAL) {
+            if (!isLoadMoreEnable || !isCanLoadMore() || !isAlreadyHeaderStatus()) {
                 return;
             }
 

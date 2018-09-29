@@ -30,7 +30,7 @@ publish {
     repoName = 'ishow'//bintray.com用户名
     userOrg = 'brightyu'//bintray.com用户名
     groupId = 'com.ishow'//jcenter上的路径
-    artifactId = 'pulltorefresh'//项目名称
+    artifactId = 'pulltorefresh-v1'//项目名称
     publishVersion = PROD_VERSION_NAME//版本号
     desc = 'android-PullToRefresh'
     website = 'https://github.com/i-show/android-PullToRefresh'

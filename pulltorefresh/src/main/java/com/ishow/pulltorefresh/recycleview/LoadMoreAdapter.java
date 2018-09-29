@@ -5,7 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,6 +51,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private int mStatus;
 
     private boolean isEnabled;
+    private View.OnClickListener mFooterClickListener;
 
     public LoadMoreAdapter(@NonNull Context context, @NonNull RecyclerView.Adapter adapter) {
         isEnabled = true;
@@ -194,16 +194,6 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public int loading(ViewGroup parent, View targetView, int total) {
-        return parent.getHeight() - targetView.getBottom();
-    }
-
-    @Override
-    public int cancelLoadMore(ViewGroup parent, View targetView) {
-        return parent.getHeight() - targetView.getBottom();
-    }
-
-    @Override
     public int loadSuccess(ViewGroup parent) {
         return 0;
     }
@@ -219,6 +209,14 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         if (mLoadMoreView != null) {
             mLoadMoreView.setVisibility(enable ? View.VISIBLE : View.GONE);
         }
+    }
+
+    @Override
+    public void setOnClickFooterListener(View.OnClickListener listener) {
+        if(mLoadMoreView != null){
+            mLoadMoreView.setOnClickListener(mFooterClickListener);
+        }
+        mFooterClickListener = listener;
     }
 
     private void setFooterStatus(int status) {
@@ -258,6 +256,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private class ViewHolder extends RecyclerView.ViewHolder {
         ViewHolder(View itemView) {
             super(itemView);
+            itemView.setOnClickListener(mFooterClickListener);
         }
     }
 
