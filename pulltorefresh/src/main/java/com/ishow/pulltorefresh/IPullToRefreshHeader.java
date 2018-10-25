@@ -1,6 +1,5 @@
 package com.ishow.pulltorefresh;
 
-import android.animation.Animator;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -78,8 +77,10 @@ public interface IPullToRefreshHeader {
 
     /**
      * 刷新中....
+     *
+     * @param fitTop fitsSystemWindows 为true的时候顶部高度
      */
-    int refreshing(ViewGroup parent, final int total, @Nullable AbsAnimatorListener listener);
+    int refreshing(ViewGroup parent, final int total, final int fitTop, @Nullable AbsAnimatorListener listener);
 
     /**
      * 取消刷新
@@ -88,8 +89,10 @@ public interface IPullToRefreshHeader {
 
     /**
      * 刷新成功
+     *
+     * @param fitTop fitsSystemWindows 为true的时候顶部高度
      */
-    int refreshSuccess(ViewGroup parent);
+    int refreshSuccess(ViewGroup parent, final int fitTop);
 
     /**
      * 刷新失败

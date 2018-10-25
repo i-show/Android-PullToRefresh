@@ -8,6 +8,7 @@ import android.content.res.TypedArray;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.view.WindowInsetsCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -69,7 +70,9 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     // 在调用onLayout的时候使用
     private int mHeaderOffsetBottom;
     private int mTargetOffsetTop;
-
+    private int mScrollViewId;
+    // 当设置 fitsSystemWindows 时候需要配置一下
+    private int mSystemWindowInsetTop;
 
     private PullToRefreshAnimatorListener mRefreshingListener;
     private PullToRefreshAnimatorListener mRefreshingHeaderListener;
@@ -86,21 +89,27 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
     public PullToRefreshView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        final ViewConfiguration configuration = ViewConfiguration.get(context);
-        mTouchSlop = configuration.getScaledTouchSlop();
-        mHandler = new Handler();
-
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.PullToRefreshView);
         isLoadMoreEnable = a.getBoolean(R.styleable.PullToRefreshView_loadMoreEnable, true);
         isRefreshEnable = a.getBoolean(R.styleable.PullToRefreshView_refreshEnable, true);
+        mScrollViewId = a.getResourceId(R.styleable.PullToRefreshView_scrollViewId, View.NO_ID);
         a.recycle();
+
+        init();
+    }
+
+    private void init() {
+        final ViewConfiguration configuration = ViewConfiguration.get(getContext());
+        mTouchSlop = configuration.getScaledTouchSlop();
+        mHandler = new Handler();
 
         mRefreshingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_REFRESHING);
         mRefreshingHeaderListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_HEADER_REFRESHING);
         mSetLoadNormalListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_LOAD_NORMAL);
         mSetRefreshNormalListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_REFRESH_NORMAL);
-    }
 
+        ViewCompat.setOnApplyWindowInsetsListener(this, mApplyWindowInsetsListener);
+    }
 
     @Override
     protected void onFinishInflate() {
@@ -110,7 +119,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             throw new IllegalStateException("need a child");
         } else if (childCount == 1) {
             mTargetView = getChildAt(0);
-            View scrollView = findViewById(R.id.pull_to_refresh_scroll_view);
+            View scrollView = findViewById(mScrollViewId);
             if (scrollView == null) {
                 scrollView = mTargetView;
             }
@@ -283,12 +292,16 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             Log.i(TAG, "movingHeader: header is null");
             return;
         }
-
+        /*
+         * 这里Header 不进行减掉 getSystemWindowInsetTop 目的保证
+         * 在normal状态下不进行展示header，这个样子 header和target
+         * 中间其实多了一个状态栏的距离
+         */
         final int offsetResult = mHeader.moving(this, total, offset);
         mHeaderOffsetBottom = mHeader.getBottom();
 
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
-        mTargetOffsetTop = mTargetView.getTop();
+        mTargetOffsetTop = mTargetView.getTop() - getSystemWindowInsetTop();
 
         if (mHeader.isEffectiveDistance(total)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_READY);
@@ -305,7 +318,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
         if (total > 0 && mHeader.isEffectiveDistance(total)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
-            int offset = mHeader.refreshing(this, total, mRefreshingHeaderListener);
+            int offset = mHeader.refreshing(this, total, getSystemWindowInsetTop(), mRefreshingHeaderListener);
             mHeaderOffsetBottom = mHeader.getBottom();
             ViewHelper.movingY(mTargetView, offset, mRefreshingListener);
         } else {
@@ -371,7 +384,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mHeader.refreshSuccess(PullToRefreshView.this);
+                int offset = mHeader.refreshSuccess(PullToRefreshView.this, getSystemWindowInsetTop());
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -406,7 +419,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mHeader.refreshSuccess(PullToRefreshView.this);
+                int offset = mHeader.refreshSuccess(PullToRefreshView.this, getSystemWindowInsetTop());
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -541,8 +554,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         }
 
         if (mTargetView != null) {
-            mTargetOffsetTop = mTargetView.getTop();
-            Log.i(TAG, "computeStatus, onAnimationEnd: mTargetOffsetTop =" + mTargetOffsetTop);
+            mTargetOffsetTop = mTargetView.getTop() - getSystemWindowInsetTop();
         }
     }
 
@@ -552,6 +564,23 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             setLoading();
         }
     }
+
+    private int getSystemWindowInsetTop() {
+        if (ViewCompat.getFitsSystemWindows(this)) {
+            return mSystemWindowInsetTop;
+        } else {
+            return 0;
+        }
+    }
+
+    private android.support.v4.view.OnApplyWindowInsetsListener mApplyWindowInsetsListener = new android.support.v4.view.OnApplyWindowInsetsListener() {
+
+        @Override
+        public WindowInsetsCompat onApplyWindowInsets(View view, WindowInsetsCompat windowInsetsCompat) {
+            mSystemWindowInsetTop = windowInsetsCompat.getSystemWindowInsetTop();
+            return ViewCompat.onApplyWindowInsets(view, windowInsetsCompat);
+        }
+    };
 
     private class PullToRefreshAnimatorListener extends AbsAnimatorListener {
         /**
@@ -609,7 +638,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             }
 
             if (mTargetView != null) {
-                mTargetOffsetTop = mTargetView.getTop();
+                mTargetOffsetTop = mTargetView.getTop() - getSystemWindowInsetTop();
             }
         }
 
@@ -624,7 +653,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             }
 
             if (mTargetView != null) {
-                mTargetOffsetTop = mTargetView.getTop();
+                mTargetOffsetTop = mTargetView.getTop() - getSystemWindowInsetTop();
             }
         }
 

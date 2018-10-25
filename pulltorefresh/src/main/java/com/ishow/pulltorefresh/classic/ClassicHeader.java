@@ -1,13 +1,11 @@
 package com.ishow.pulltorefresh.classic;
 
-import android.animation.Animator;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.AppCompatTextView;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -160,8 +158,8 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
 
 
     @Override
-    public int refreshing(ViewGroup parent, int total, @Nullable AbsAnimatorListener listener) {
-        int offset = -getTop();
+    public int refreshing(ViewGroup parent, final int total, final int fitTop, @Nullable AbsAnimatorListener listener) {
+        int offset = -getTop() + fitTop;
         ViewHelper.movingY(this, offset, listener);
         return offset;
     }
@@ -174,8 +172,8 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
     }
 
     @Override
-    public int refreshSuccess(ViewGroup parent) {
-        int offset = -getHeaderHeight();
+    public int refreshSuccess(ViewGroup parent, final int fitTop) {
+        int offset = -getHeaderHeight() - fitTop;
         ViewHelper.movingY(this, offset);
         return offset;
     }
