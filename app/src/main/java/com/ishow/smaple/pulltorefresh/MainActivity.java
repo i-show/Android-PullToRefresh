@@ -7,11 +7,13 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
+import com.ishow.pulltorefresh.OnPullToRefreshStatusChangedListener;
 import com.ishow.pulltorefresh.PullToRefreshView;
 import com.ishow.pulltorefresh.classic.ClassicHeader;
 import com.ishow.pulltorefresh.recycleview.LoadMoreAdapter;
@@ -23,7 +25,7 @@ import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
 
 public class MainActivity extends AppCompatActivity {
-
+    private static final String TAG = "yhy";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         pullToRefreshView.setRefreshSuccess();
-                        pullToRefreshView.setLoadMoreNormal();
                         adapter.setData(getData(null));
                     }
                 }, 1000);
@@ -72,8 +73,6 @@ public class MainActivity extends AppCompatActivity {
                 }, 800);
             }
         });
-
-
     }
 
 

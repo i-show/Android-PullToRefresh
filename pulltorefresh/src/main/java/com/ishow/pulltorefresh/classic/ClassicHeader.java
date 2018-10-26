@@ -42,7 +42,6 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
     /**
      * 进度条
      */
-
     private RotateAnimation mRotateUpAnim;
     private RotateAnimation mRotateDownAnim;
     private RotateAnimation mRotateLoading;
@@ -76,12 +75,6 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
 
         addIcon();
         addText();
-    }
-
-
-    @Override
-    public void init(ViewGroup parent) {
-        mStatus = IPullToRefreshHeader.STATUS_NORMAL;
     }
 
     @NonNull
@@ -142,13 +135,18 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
     }
 
     @Override
-    public int moving(ViewGroup parent, final int total, final int offset) {
-        if (total >= getMaxPullDownHeight()) {
+    public int getMovingDistance() {
+        return Math.abs(getBottom());
+    }
+
+    @Override
+    public int moving(ViewGroup parent, final int offset, final int fitTop) {
+        if (Math.abs(getBottom()) >= getMaxPullDownHeight()) {
             return 0;
         } else if (getTop() - offset < -getHeaderHeight()) {
-            int ajust = getHeaderHeight() + getTop();
-            ViewCompat.offsetTopAndBottom(this, -ajust);
-            return -ajust;
+            int adjust = getHeaderHeight() + getTop();
+            ViewCompat.offsetTopAndBottom(this, -adjust);
+            return -adjust;
         } else {
             ViewCompat.offsetTopAndBottom(this, -offset);
             return -offset;
@@ -158,7 +156,7 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
 
 
     @Override
-    public int refreshing(ViewGroup parent, final int total, final int fitTop, @Nullable AbsAnimatorListener listener) {
+    public int refreshing(ViewGroup parent, final int fitTop, @Nullable AbsAnimatorListener listener) {
         int offset = -getTop() + fitTop;
         ViewHelper.movingY(this, offset, listener);
         return offset;
@@ -196,8 +194,8 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
     }
 
     @Override
-    public boolean isEffectiveDistance(int movingDistance) {
-        return Math.abs(movingDistance) > getHeaderHeight();
+    public boolean isEffectiveDistance(final int fitTop) {
+        return Math.abs(getBottom()) > getHeaderHeight() + fitTop;
     }
 
 

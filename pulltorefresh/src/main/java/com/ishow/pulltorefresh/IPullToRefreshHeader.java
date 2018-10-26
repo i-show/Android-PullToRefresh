@@ -42,8 +42,6 @@ public interface IPullToRefreshHeader {
     @interface status {
     }
 
-    void init(ViewGroup parent);
-
     /**
      * 获取Header
      */
@@ -66,21 +64,26 @@ public interface IPullToRefreshHeader {
     int getBottom();
 
     /**
+     * 获取移动的距离
+     */
+    int getMovingDistance();
+
+    /**
      * 移动
      *
      * @param parent 父View
-     * @param total  总共移动了多少距离
      * @param offset 当前事件移动的距离
+     * @param fitTop fitsSystemWindows 为true的时候顶部高度
      * @return header移动的距离
      */
-    int moving(ViewGroup parent, final int total, final int offset);
+    int moving(ViewGroup parent, final int offset, final int fitTop);
 
     /**
      * 刷新中....
      *
      * @param fitTop fitsSystemWindows 为true的时候顶部高度
      */
-    int refreshing(ViewGroup parent, final int total, final int fitTop, @Nullable AbsAnimatorListener listener);
+    int refreshing(ViewGroup parent, final int fitTop, @Nullable AbsAnimatorListener listener);
 
     /**
      * 取消刷新
@@ -96,7 +99,8 @@ public interface IPullToRefreshHeader {
 
     /**
      * 刷新失败
-     *  @param fitTop fitsSystemWindows 为true的时候顶部高度
+     *
+     * @param fitTop fitsSystemWindows 为true的时候顶部高度
      */
     int refreshFailed(ViewGroup parent, final int fitTop);
 
@@ -112,8 +116,13 @@ public interface IPullToRefreshHeader {
 
     /**
      * 判断当前移动距离是否是有效距离
+     *
+     * @param fitTop fitsSystemWindows 为true的时候顶部高度
      */
-    boolean isEffectiveDistance(int movingDistance);
+    boolean isEffectiveDistance(final int fitTop);
 
+    /**
+     * 是否可用
+     */
     void setEnabled(boolean enabled);
 }
