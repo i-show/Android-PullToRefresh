@@ -179,8 +179,8 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
     }
 
     @Override
-    public int refreshFailed(ViewGroup parent) {
-        int offset = -getHeaderHeight();
+    public int refreshFailed(ViewGroup parent, final int fitTop) {
+        int offset = -getHeaderHeight() - fitTop;
         ViewHelper.movingY(this, offset);
         return offset;
     }

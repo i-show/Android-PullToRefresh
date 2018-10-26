@@ -96,8 +96,9 @@ public interface IPullToRefreshHeader {
 
     /**
      * 刷新失败
+     *  @param fitTop fitsSystemWindows 为true的时候顶部高度
      */
-    int refreshFailed(ViewGroup parent);
+    int refreshFailed(ViewGroup parent, final int fitTop);
 
     /**
      * 获取下拉的最大高度

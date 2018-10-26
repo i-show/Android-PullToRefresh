@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         adapter.plusData(getData(adapter));
                     }
-                }, 1000);
+                }, 800);
             }
         });
 

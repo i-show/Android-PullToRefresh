@@ -39,6 +39,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      * TargetView
      */
     private View mTargetView;
+    private View mCrownPrinceChild;
     /**
      * FooterView
      */
@@ -67,11 +68,15 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
     private Handler mHandler;
 
-    // 在调用onLayout的时候使用
+    /**
+     * 在调用onLayout的时候使用
+     */
     private int mHeaderOffsetBottom;
     private int mTargetOffsetTop;
     private int mScrollViewId;
-    // 当设置 fitsSystemWindows 时候需要配置一下
+    /**
+     * 当设置 fitsSystemWindows 时候需要配置一下
+     */
     private int mSystemWindowInsetTop;
 
     private PullToRefreshAnimatorListener mRefreshingListener;
@@ -99,6 +104,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     }
 
     private void init() {
+        Log.i(TAG, "init: is = " + ViewCompat.getFitsSystemWindows(this));
         final ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mTouchSlop = configuration.getScaledTouchSlop();
         mHandler = new Handler();
@@ -115,22 +121,23 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     protected void onFinishInflate() {
         super.onFinishInflate();
         final int childCount = getChildCount();
-        if (childCount <= 0) {
-            throw new IllegalStateException("need a child");
-        } else if (childCount == 1) {
-            mTargetView = getChildAt(0);
-            View scrollView = findViewById(mScrollViewId);
-            if (scrollView == null) {
-                scrollView = mTargetView;
-            }
-            if (scrollView == null) {
-                return;
-            }
+        if (childCount != 1) {
+            throw new IllegalStateException("need only one a child");
+        }
+        mTargetView = getChildAt(0);
+        mCrownPrinceChild = mTargetView;
 
-            if (scrollView instanceof RecyclerView) {
-                RecyclerView recyclerView = (RecyclerView) scrollView;
-                recyclerView.addOnScrollListener(mRecycleScrollListener);
-            }
+        View scrollView = findViewById(mScrollViewId);
+        if (scrollView == null) {
+            scrollView = mTargetView;
+        }
+        if (scrollView == null) {
+            return;
+        }
+
+        if (scrollView instanceof RecyclerView) {
+            RecyclerView recyclerView = (RecyclerView) scrollView;
+            recyclerView.addOnScrollListener(mRecycleScrollListener);
         }
     }
 
@@ -318,7 +325,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
         if (total > 0 && mHeader.isEffectiveDistance(total)) {
             mHeader.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
-            int offset = mHeader.refreshing(this, total, getSystemWindowInsetTop(), mRefreshingHeaderListener);
+            int offset = mHeader.refreshing(this, total, getHeaderystemWindowInsetTop(), mRefreshingHeaderListener);
             mHeaderOffsetBottom = mHeader.getBottom();
             ViewHelper.movingY(mTargetView, offset, mRefreshingListener);
         } else {
@@ -384,7 +391,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mHeader.refreshSuccess(PullToRefreshView.this, getSystemWindowInsetTop());
+                int offset = mHeader.refreshSuccess(PullToRefreshView.this, getHeaderystemWindowInsetTop());
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -419,7 +426,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = mHeader.refreshSuccess(PullToRefreshView.this, getSystemWindowInsetTop());
+                int offset = mHeader.refreshFailed(PullToRefreshView.this, getHeaderystemWindowInsetTop());
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -573,11 +580,23 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         }
     }
 
+    /**
+     * 获取顶部下拉刷新的FitTop
+     */
+    private int getHeaderystemWindowInsetTop() {
+        if (ViewCompat.getFitsSystemWindows(this) || ViewCompat.getFitsSystemWindows(mCrownPrinceChild)) {
+            return mSystemWindowInsetTop;
+        } else {
+            return 0;
+        }
+    }
+
     private android.support.v4.view.OnApplyWindowInsetsListener mApplyWindowInsetsListener = new android.support.v4.view.OnApplyWindowInsetsListener() {
 
         @Override
         public WindowInsetsCompat onApplyWindowInsets(View view, WindowInsetsCompat windowInsetsCompat) {
             mSystemWindowInsetTop = windowInsetsCompat.getSystemWindowInsetTop();
+            Log.i(TAG, "onApplyWindowInsets: mSystemWindowInsetTop = " + mSystemWindowInsetTop);
             return ViewCompat.onApplyWindowInsets(view, windowInsetsCompat);
         }
     };
