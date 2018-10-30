@@ -75,6 +75,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      * 当设置 fitsSystemWindows 时候需要配置一下
      */
     private int mSystemWindowInsetTop;
+    private int mCustomFooterOrHeaderCount;
 
     private PullToRefreshAnimatorListener mRefreshingListener;
     private PullToRefreshAnimatorListener mRefreshingHeaderListener;
@@ -104,6 +105,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         final ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mTouchSlop = configuration.getScaledTouchSlop();
         mHandler = new Handler();
+        mCustomFooterOrHeaderCount = 0;
 
         mRefreshingListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_REFRESHING);
         mRefreshingHeaderListener = new PullToRefreshAnimatorListener(PullToRefreshAnimatorListener.TYPE_HEADER_REFRESHING);
@@ -289,7 +291,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      */
     private synchronized void movingHeader(final int offset) {
         if (mHeader == null) {
-            Log.i(TAG, "movingHeader: header is null");
             return;
         }
         /*
@@ -421,6 +422,10 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      */
     @SuppressWarnings("unused")
     public void setRefreshFailed() {
+        if (mHeader == null || mHeader.getStatus() != IPullToRefreshHeader.STATUS_REFRESHING) {
+            Log.e(TAG, "setRefreshFailed: status error ");
+            return;
+        }
         // 通知状态改变要在setStatus之前
         notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_FAILED);
         mHeader.setStatus(IPullToRefreshHeader.STATUS_FAILED);
@@ -455,6 +460,10 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             Log.i(TAG, "setLoadMoreFailed: mFooter is null");
             return;
         }
+        if (mFooter.getStatus() != IPullToRefreshFooter.STATUS_LOADING) {
+            Log.i(TAG, "setLoadMoreFailed: status error");
+            return;
+        }
         // 通知状态改变要在setStatus之前
         notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_FAILED);
         mFooter.setStatus(IPullToRefreshFooter.STATUS_FAILED);
@@ -476,6 +485,10 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             Log.i(TAG, "setLoadMoreSuccess: mFooter is null");
             return;
         }
+        if (mFooter.getStatus() != IPullToRefreshFooter.STATUS_LOADING) {
+            return;
+        }
+
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -505,6 +518,14 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             mFooter.setStatus(IPullToRefreshFooter.STATUS_END);
         }
         requestLayout();
+    }
+
+    /**
+     * 自定义的Footer和Header的高度
+     */
+    @SuppressWarnings("unused")
+    public void setCustomFooterOrHeaderCount(int count) {
+        mCustomFooterOrHeaderCount = count;
     }
 
     public void setOnPullToRefreshListener(OnPullToRefreshListener listener) {
@@ -743,6 +764,10 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
             if (layoutManager == null) {
                 Log.i(TAG, "onScrollStateChanged:  layoutManager is null");
+                return;
+            }
+            // 如果item == 1 不进行任何操作 默认是有一个footer的
+            if (layoutManager.getItemCount() <= (1 + mCustomFooterOrHeaderCount)) {
                 return;
             }
 

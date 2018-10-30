@@ -88,5 +88,9 @@ public interface IPullToRefreshUtils<DATA> {
     /**
      * 消化数据
      */
-    void resolveData(PullToRefreshView pullToRefresh, List<DATA> dataList, int totalcount);
+    void resolveData(PullToRefreshView pullToRefresh, List<DATA> dataList, int totalCount);
+    /**
+     * 消化数据
+     */
+    void resolveData(PullToRefreshView pullToRefresh, List<DATA> dataList, boolean isLastPage);
 }
