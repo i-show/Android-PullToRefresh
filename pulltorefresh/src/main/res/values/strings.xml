@@ -5,7 +5,7 @@
     <string name="pulltorefresh_header_success">刷新成功</string>
     <string name="pulltorefresh_header_fail">刷新失败</string>
 
-    <string name="pulltorefresh_footer_normal">查看更多</string>
+    <string name="pulltorefresh_footer_normal">上滑查看更多</string>
     <string name="pulltorefresh_footer_ready">松开载入更多</string>
     <string name="pulltorefresh_footer_loading">正在努力加载中&#8230;</string>
     <string name="pulltorefresh_footer_success">载入成功</string>
