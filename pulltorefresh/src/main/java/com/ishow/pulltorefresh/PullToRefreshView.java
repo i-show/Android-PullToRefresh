@@ -68,7 +68,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     /**
      * 在调用onLayout的时候使用
      */
-    private int mHeaderOffsetBottom;
+    private int mHeaderMovingDistance;
     private int mTargetOffsetTop;
     private int mScrollViewId;
     /**
@@ -167,7 +167,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         final int height = getMeasuredHeight();
         if (mHeader != null) {
             View view = mHeader.getView();
-            view.layout(0, -view.getMeasuredHeight() + mHeaderOffsetBottom, view.getMeasuredWidth(), mHeaderOffsetBottom);
+            view.layout(0, -view.getMeasuredHeight() + mHeaderMovingDistance, view.getMeasuredWidth(), mHeaderMovingDistance);
         }
 
         if (mTargetView != null) {
@@ -223,7 +223,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         if (!isEnabled() || !canRefresh) {
             return false;
         }
-
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mIsBeingDragged = false;
@@ -270,7 +269,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
     public void setRefreshEnable(boolean refreshEnable) {
         isRefreshEnable = refreshEnable;
-        if (mHeader != null) mHeader.setEnabled(refreshEnable);
     }
 
 
@@ -300,19 +298,15 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
          */
         final int headerFitTop = getHeaderSystemWindowInsetTop();
         final int offsetResult = mHeader.moving(this, offset, headerFitTop);
-        mHeaderOffsetBottom = mHeader.getBottom();
+        mHeaderMovingDistance = mHeader.getMovingDistance();
 
         ViewCompat.offsetTopAndBottom(mTargetView, offsetResult);
         mTargetOffsetTop = mTargetView.getTop() - getSystemWindowInsetTop();
 
         if (mHeader.isEffectiveDistance(headerFitTop)) {
-            // 通知状态改变要在setStatus之前
             notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_READY);
-            mHeader.setStatus(IPullToRefreshHeader.STATUS_READY);
         } else {
-            // 通知状态改变要在setStatus之前
             notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_NORMAL);
-            mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
         }
 
         notifyMovingFitSystemWindows(mHeader.getMovingDistance());
@@ -325,11 +319,9 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         }
 
         if (mHeader.isEffectiveDistance(getHeaderSystemWindowInsetTop())) {
-            // 通知状态改变要在setStatus之前
             notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_REFRESHING);
-            mHeader.setStatus(IPullToRefreshHeader.STATUS_REFRESHING);
             int offset = mHeader.refreshing(this, getHeaderSystemWindowInsetTop(), mRefreshingHeaderListener);
-            mHeaderOffsetBottom = mHeader.getBottom();
+            mHeaderMovingDistance = mHeader.getMovingDistance();
             ViewHelper.movingY(mTargetView, offset, mRefreshingListener);
         } else {
             int offset = mHeader.cancelRefresh(this);
@@ -391,7 +383,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                int offset = -mHeader.getBottom();
+                int offset = -mHeader.getMovingDistance();
                 ViewHelper.movingY(mTargetView, offset, mSetRefreshNormalListener);
             }
         }, ANI_INTERVAL);
@@ -407,7 +399,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         }
         // 通知状态改变要在setStatus之前
         notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_SUCCESS);
-        mHeader.setStatus(IPullToRefreshHeader.STATUS_SUCCESS);
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -428,7 +419,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         }
         // 通知状态改变要在setStatus之前
         notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_FAILED);
-        mHeader.setStatus(IPullToRefreshHeader.STATUS_FAILED);
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -443,11 +433,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      */
     @SuppressWarnings("unused")
     public void setLoadMoreNormal() {
-        // 通知状态改变要在setStatus之前
         notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_NORMAL);
-        if (mFooter != null) {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
-        }
     }
 
 
@@ -466,7 +452,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         }
         // 通知状态改变要在setStatus之前
         notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_FAILED);
-        mFooter.setStatus(IPullToRefreshFooter.STATUS_FAILED);
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -512,11 +497,8 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             ValueAnimator animator = (ValueAnimator) object;
             animator.removeAllListeners();
         }
-        // 通知状态改变要在setStatus之前
         notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_END);
-        if (mFooter != null) {
-            mFooter.setStatus(IPullToRefreshFooter.STATUS_END);
-        }
+
         requestLayout();
     }
 
@@ -547,6 +529,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     /**
      * 设置状态改变
      */
+    @SuppressWarnings("unused")
     public void setOnPullToRefreshStatusChangedListener(OnPullToRefreshStatusChangedListener listener) {
         mPullToRefreshStatusChangedListener = listener;
     }
@@ -555,7 +538,12 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      * 通知刷新的状态有改变
      */
     private void notifyRefreshStatusChanged(int status) {
-        if (mPullToRefreshStatusChangedListener != null && mHeader != null && mHeader.getStatus() != status) {
+        if (mHeader == null || mHeader.getStatus() == status) {
+            return;
+        }
+        mHeader.setStatus(status);
+
+        if (mPullToRefreshStatusChangedListener != null) {
             mPullToRefreshStatusChangedListener.onRefreshStatusChanged(status);
         }
     }
@@ -564,7 +552,12 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      * 通知加载更多的状态有改变
      */
     private void notifyLoadMoreStatusChanged(int status) {
-        if (mPullToRefreshStatusChangedListener != null && mFooter != null && mFooter.getStatus() != status) {
+        if (mFooter == null || mFooter.getStatus() == status) {
+            return;
+        }
+        mFooter.setStatus(status);
+
+        if (mPullToRefreshStatusChangedListener != null) {
             mPullToRefreshStatusChangedListener.onLoadMoreStatusChanged(status);
         }
     }
@@ -618,7 +611,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
     private void computeStatus() {
         if (mHeader != null) {
-            mHeaderOffsetBottom = mHeader.getBottom();
+            mHeaderMovingDistance = mHeader.getMovingDistance();
         }
 
         if (mTargetView != null) {
@@ -719,8 +712,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_NORMAL);
 
             if (mHeader != null) {
-                mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
-                mHeaderOffsetBottom = mHeader.getBottom();
+                mHeaderMovingDistance = mHeader.getMovingDistance();
             }
 
             if (mTargetView != null) {
@@ -729,16 +721,13 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         }
 
         private void setLoadNormal() {
-            // 通知状态改变要在setStatus之前
-            notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_NORMAL);
-
             if (mHeader != null) {
-                mHeader.setStatus(IPullToRefreshHeader.STATUS_NORMAL);
-                mHeaderOffsetBottom = mHeader.getBottom();
+                notifyRefreshStatusChanged(IPullToRefreshHeader.STATUS_NORMAL);
+                mHeaderMovingDistance = mHeader.getMovingDistance();
             }
 
             if (mFooter != null && mFooter.getStatus() != IPullToRefreshFooter.STATUS_END) {
-                mFooter.setStatus(IPullToRefreshFooter.STATUS_NORMAL);
+                notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_NORMAL);
             }
 
             if (mTargetView != null) {

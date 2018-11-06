@@ -59,11 +59,6 @@ public interface IPullToRefreshHeader {
     int getStatus();
 
     /**
-     * 获取距离顶部的距离
-     */
-    int getBottom();
-
-    /**
      * 获取移动的距离
      */
     int getMovingDistance();
@@ -120,9 +115,4 @@ public interface IPullToRefreshHeader {
      * @param fitTop fitsSystemWindows 为true的时候顶部高度
      */
     boolean isEffectiveDistance(final int fitTop);
-
-    /**
-     * 是否可用
-     */
-    void setEnabled(boolean enabled);
 }

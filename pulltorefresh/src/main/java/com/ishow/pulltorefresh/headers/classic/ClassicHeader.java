@@ -1,4 +1,4 @@
-package com.ishow.pulltorefresh.classic;
+package com.ishow.pulltorefresh.headers.classic;
 
 import android.content.Context;
 import android.support.annotation.NonNull;

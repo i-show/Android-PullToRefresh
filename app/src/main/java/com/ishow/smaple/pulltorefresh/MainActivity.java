@@ -1,27 +1,24 @@
 package com.ishow.smaple.pulltorefresh;
 
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.ishow.pulltorefresh.IPullToRefreshHeader;
 import com.ishow.pulltorefresh.OnPullToRefreshListener;
-import com.ishow.pulltorefresh.OnPullToRefreshStatusChangedListener;
 import com.ishow.pulltorefresh.PullToRefreshView;
-import com.ishow.pulltorefresh.classic.ClassicHeader;
+import com.ishow.pulltorefresh.headers.classic.ClassicHeader;
+import com.ishow.pulltorefresh.headers.google.GoogleStyleHeader;
 import com.ishow.pulltorefresh.recycleview.LoadMoreAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -32,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         transparentStatusBar();
         setContentView(R.layout.activity_main);
 
-        ClassicHeader header = new ClassicHeader(this);
+        IPullToRefreshHeader header = new GoogleStyleHeader(this);
 
         final Test2Adapter adapter = new Test2Adapter(this);
         adapter.setData(getData(adapter));
