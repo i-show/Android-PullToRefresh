@@ -581,7 +581,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
     private boolean isAlreadyHeaderStatus() {
         if (mHeader == null) {
-            return false;
+            return true;
         }
         final int status = mHeader.getStatus();
         return status == IPullToRefreshHeader.STATUS_NORMAL || status == IPullToRefreshHeader.STATUS_READY;
@@ -589,7 +589,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
     private boolean isAlreadyFooterStatus() {
         if (mFooter == null) {
-            return false;
+            return true;
         }
         final int status = mFooter.getStatus();
         return status == IPullToRefreshFooter.STATUS_NORMAL || status == IPullToRefreshFooter.STATUS_READY || status == IPullToRefreshFooter.STATUS_END;
