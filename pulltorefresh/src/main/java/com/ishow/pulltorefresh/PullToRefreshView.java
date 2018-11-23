@@ -566,6 +566,9 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
      * 是否已经出FitSystemWindows 的距离
      */
     public void notifyMovingFitSystemWindows(final int movingDistance) {
+        if(mHeader == null || mHeader.getStatus() == IPullToRefreshHeader.STATUS_NORMAL){
+            return;
+        }
         if (mPullToRefreshStatusChangedListener != null) {
             mPullToRefreshStatusChangedListener.onMovingFitTop(movingDistance, getHeaderSystemWindowInsetTop());
         }
@@ -612,6 +615,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     private void computeStatus() {
         if (mHeader != null) {
             mHeaderMovingDistance = mHeader.getMovingDistance();
+            notifyMovingFitSystemWindows(mHeaderMovingDistance);
         }
 
         if (mTargetView != null) {

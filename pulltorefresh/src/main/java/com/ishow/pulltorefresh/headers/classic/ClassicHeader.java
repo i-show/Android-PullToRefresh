@@ -151,7 +151,6 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
             ViewCompat.offsetTopAndBottom(this, -offset);
             return -offset;
         }
-
     }
 
 
