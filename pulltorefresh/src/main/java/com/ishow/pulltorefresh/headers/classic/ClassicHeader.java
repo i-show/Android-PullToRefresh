@@ -141,7 +141,7 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
 
     @Override
     public int moving(ViewGroup parent, final int offset, final int fitTop) {
-        if (Math.abs(getBottom()) >= getMaxPullDownHeight()) {
+        if (Math.abs(getBottom()) >= getMaxPullDownHeight() && offset < 0) {
             return 0;
         } else if (getTop() - offset < -getHeaderHeight()) {
             int adjust = getHeaderHeight() + getTop();

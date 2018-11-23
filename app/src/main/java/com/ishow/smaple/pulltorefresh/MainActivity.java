@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
         final PullToRefreshView pullToRefreshView = findViewById(R.id.pulltorefresh);
         pullToRefreshView.setHeader(header);
-        pullToRefreshView.setFooter(wrapper);
+        //pullToRefreshView.setFooter(wrapper);
         pullToRefreshView.setOnPullToRefreshListener(new OnPullToRefreshListener() {
             @Override
             public void onRefresh(PullToRefreshView v) {
