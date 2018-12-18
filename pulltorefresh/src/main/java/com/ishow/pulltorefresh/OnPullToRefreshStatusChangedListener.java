@@ -15,5 +15,5 @@ public interface OnPullToRefreshStatusChangedListener {
      * 是否已经移动了fitSystemWindows的距离
      * header移动的距离， fitTop
      */
-    void onMovingFitTop(final int headerDistance, final int fit);
+    void onMovingFitTop(IPullToRefreshHeader header, final int headerDistance, final int fit);
 }
