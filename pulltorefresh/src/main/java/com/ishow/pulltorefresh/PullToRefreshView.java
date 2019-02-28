@@ -580,6 +580,9 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     }
 
     private boolean isAlreadyHeaderStatus() {
+        if (!isRefreshEnable) {
+            return true;
+        }
         if (mHeader == null) {
             return true;
         }
@@ -587,7 +590,11 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         return status == IPullToRefreshHeader.STATUS_NORMAL || status == IPullToRefreshHeader.STATUS_READY;
     }
 
+
     private boolean isAlreadyFooterStatus() {
+        if (!isLoadMoreEnable) {
+            return true;
+        }
         if (mFooter == null) {
             return true;
         }
@@ -595,8 +602,11 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         return status == IPullToRefreshFooter.STATUS_NORMAL || status == IPullToRefreshFooter.STATUS_READY || status == IPullToRefreshFooter.STATUS_END;
     }
 
+    /**
+     * 是否可以加载更多
+     */
     private boolean isCanLoadMore() {
-        return mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_NORMAL;
+        return isLoadMoreEnable && mFooter != null && mFooter.getStatus() == IPullToRefreshFooter.STATUS_NORMAL;
     }
 
     private void setRefreshing() {
