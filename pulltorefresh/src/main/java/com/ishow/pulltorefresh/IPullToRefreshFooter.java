@@ -1,6 +1,6 @@
 package com.ishow.pulltorefresh;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
 import android.view.View;
 import android.view.ViewGroup;
 

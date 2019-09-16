@@ -1,11 +1,10 @@
 package com.ishow.pulltorefresh.utils;
 
-import android.animation.Animator;
 import android.animation.ValueAnimator;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.v4.view.ViewCompat;
-import android.util.Log;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.core.view.ViewCompat;
+
 import android.view.View;
 
 import com.ishow.pulltorefresh.AbsAnimatorListener;
