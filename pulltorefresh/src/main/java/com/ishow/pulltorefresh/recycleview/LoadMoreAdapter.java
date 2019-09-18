@@ -53,7 +53,6 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private int mStatus;
 
     private boolean isEnabled;
-    private View.OnClickListener mFooterClickListener;
 
     public LoadMoreAdapter(@NonNull Context context, @NonNull RecyclerView.Adapter adapter) {
         isEnabled = true;
@@ -93,7 +92,6 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
     }
 
-
     /**
      * 是否是 LoadMore状态
      */
@@ -105,29 +103,25 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        switch (viewType) {
-            case TYPE_LOAD_MORE:
-                mLoadMoreView = mLayoutInflater.inflate(R.layout.pull_to_refresh_footer, parent, false);
-                mLoadMoreTextView = mLoadMoreView.findViewById(R.id.pull_to_refesh_footer_text);
-                mLoadMoreLoadingView = mLoadMoreView.findViewById(R.id.pull_to_refesh_footer_loading);
-                return new ViewHolder(mLoadMoreView);
-            default:
-                return mInnerAdapter.onCreateViewHolder(parent, viewType);
+        if (viewType == TYPE_LOAD_MORE) {
+            mLoadMoreView = mLayoutInflater.inflate(R.layout.pull_to_refresh_footer, parent, false);
+            mLoadMoreTextView = mLoadMoreView.findViewById(R.id.pull_to_refresh_footer_text);
+            mLoadMoreLoadingView = mLoadMoreView.findViewById(R.id.pull_to_refresh_footer_loading);
+            return new ViewHolder(mLoadMoreView);
+        }else {
+            return mInnerAdapter.onCreateViewHolder(parent, viewType);
         }
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         int itemType = getItemViewType(position);
-        switch (itemType) {
-            case TYPE_LOAD_MORE:
-                setFooterStatus(mStatus);
-                break;
-            default:
-                mInnerAdapter.onBindViewHolder(holder, position);
-                break;
+        if (itemType == TYPE_LOAD_MORE) {
+            setFooterStatus(mStatus);
+        } else {
+            mInnerAdapter.onBindViewHolder(holder, position);
         }
-
     }
 
     @Override
@@ -135,7 +129,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         mInnerAdapter.onAttachedToRecyclerView(recyclerView);
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
 
-        if (layoutManager != null && !(layoutManager instanceof GridLayoutManager)) {
+        if (!(layoutManager instanceof GridLayoutManager)) {
             // 如果不是GridLayoutManager 那么不进行任何操作
             return;
         }
@@ -163,6 +157,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
         mInnerAdapter.onViewAttachedToWindow(holder);
         if (isLoadMoreItem(holder.getLayoutPosition())) {
@@ -203,14 +198,6 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
     }
 
-    @Override
-    public void setOnClickFooterListener(View.OnClickListener listener) {
-        if (mLoadMoreView != null) {
-            mLoadMoreView.setOnClickListener(mFooterClickListener);
-        }
-        mFooterClickListener = listener;
-    }
-
     private void setFooterStatus(int status) {
         if (mLoadMoreView == null) {
             return;
@@ -243,10 +230,10 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private class ViewHolder extends RecyclerView.ViewHolder {
         ViewHolder(View itemView) {
             super(itemView);
-            itemView.setOnClickListener(mFooterClickListener);
         }
     }
 
+    @SuppressWarnings("unused")
     public RecyclerView.Adapter getInnerAdapter() {
         return mInnerAdapter;
     }

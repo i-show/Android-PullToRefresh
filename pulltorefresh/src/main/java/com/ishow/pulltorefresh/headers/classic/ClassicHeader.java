@@ -88,7 +88,7 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
     public void setStatus(@status int status) {
         switch (status) {
             case STATUS_NORMAL:
-                mIconView.setImageResource(R.drawable.ic_pulltorefresh_arrow);
+                mIconView.setImageResource(R.drawable.ic_pull2refresh_arrow);
                 mTextView.setText(R.string.pulltorefresh_header_normal);
                 if (mStatus == STATUS_READY) {
                     mIconView.startAnimation(mRotateDownAnim);
@@ -104,12 +104,12 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
                     mIconView.clearAnimation();
                     mIconView.startAnimation(mRotateUpAnim);
                 }
-                mIconView.setImageResource(R.drawable.ic_pulltorefresh_arrow);
+                mIconView.setImageResource(R.drawable.ic_pull2refresh_arrow);
                 mTextView.setText(R.string.pulltorefresh_header_ready);
                 break;
             case STATUS_REFRESHING:
                 mIconView.clearAnimation();
-                mIconView.setImageResource(R.drawable.ic_pulltorefresh_loading);
+                mIconView.setImageResource(R.drawable.ic_pull2refresh_loading);
                 mIconView.startAnimation(mRotateLoading);
                 mTextView.setText(R.string.pulltorefresh_header_loading);
                 requestLayout();
@@ -117,13 +117,13 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
             case STATUS_FAILED:
                 mIconView.clearAnimation();
                 mIconView.setVisibility(VISIBLE);
-                mIconView.setImageResource(R.drawable.ic_pulltorefresh_refresh_fail);
+                mIconView.setImageResource(R.drawable.ic_pull2refresh_refresh_fail);
                 mTextView.setText(R.string.pulltorefresh_header_fail);
                 break;
             case STATUS_SUCCESS:
                 mIconView.clearAnimation();
                 mIconView.setVisibility(VISIBLE);
-                mIconView.setImageResource(R.drawable.ic_pulltorefresh_refresh_success);
+                mIconView.setImageResource(R.drawable.ic_pull2refresh_refresh_success);
                 mTextView.setText(R.string.pulltorefresh_header_success);
                 break;
         }
@@ -205,7 +205,7 @@ public class ClassicHeader extends LinearLayout implements IPullToRefreshHeader 
             mIconView = new ImageView(getContext());
             mIconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             LayoutParams lp = new LayoutParams(size, size);
-            mIconView.setImageResource(R.drawable.ic_pulltorefresh_arrow);
+            mIconView.setImageResource(R.drawable.ic_pull2refresh_arrow);
             addView(mIconView, lp);
         }
     }

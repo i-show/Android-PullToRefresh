@@ -55,9 +55,4 @@ public interface IPullToRefreshFooter {
      * 是否可用
      */
     void setEnabled(boolean enable);
-
-    /**
-     * 设置点击Footer的事件
-     */
-    void setOnClickFooterListener(View.OnClickListener listener);
 }
