@@ -25,7 +25,7 @@ import com.ishow.pulltorefresh.utils.ViewHelper;
  * Created by Bright.Yu on 2017/3/20.
  * PullToRefresh
  */
-public class PullToRefreshView extends ViewGroup implements View.OnClickListener {
+public class PullToRefreshView extends ViewGroup {
     private static final String TAG = "PullToRefreshView";
     /**
      * 设置了时间的时候进行配置一个时间间隔
@@ -71,7 +71,9 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     private int mHeaderMovingDistance;
     private int mTargetOffsetTop;
     private int mScrollViewId;
-
+    /**
+     * RecyclerView默认的Footer或者HeaderCount
+     */
     private int mCustomFooterOrHeaderCount;
 
     private PullToRefreshAnimatorListener mRefreshingListener;
@@ -177,13 +179,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         // 只有当Header和Footer 都ok的时候才能进行 下拉或者上拉
-        if (!isAlreadyStatus()) {
-            return false;
-        }
-
-        final boolean canRefresh = canRefresh();
-
-        if (!isEnabled() || !canRefresh) {
+        if (!isAlreadyStatus() || canScrollUp()) {
             return false;
         }
 
@@ -208,14 +204,10 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     @Override
     @SuppressLint("ClickableViewAccessibility")
     public boolean onTouchEvent(MotionEvent event) {
-        if (!isAlreadyStatus()) {
+        if (!isAlreadyStatus() || canScrollUp()) {
             return false;
         }
 
-        final boolean canRefresh = canRefresh();
-        if (!isEnabled() || !canRefresh) {
-            return false;
-        }
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mIsBeingDragged = false;
@@ -286,11 +278,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         if (mHeader == null) {
             return;
         }
-        /*
-         * 这里Header 不进行减掉 getSystemWindowInsetTop 目的保证
-         * 在normal状态下不进行展示header，这个样子 header和target
-         * 中间其实多了一个状态栏的距离
-         */
+
         final int offsetResult = mHeader.moving(this, offset);
         mHeaderMovingDistance = mHeader.getMovingDistance();
 
@@ -337,14 +325,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
             mLastY = y;
             mIsBeingDragged = true;
         }
-    }
-
-
-    /**
-     * 是否可以进行刷新操作
-     */
-    private boolean canRefresh() {
-        return isRefreshEnable && mHeader != null && !canScrollUp();
     }
 
     /**
@@ -421,17 +401,8 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     }
 
     /**
-     * 加载完成
-     */
-    @SuppressWarnings("unused")
-    public void setLoadMoreNormal() {
-        notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_NORMAL);
-    }
-
-    /**
      * 下拉加载失败
      */
-    @SuppressWarnings("unused")
     public void setLoadMoreFailed() {
         if (mFooter == null) {
             Log.i(TAG, "setLoadMoreFailed: mFooter is null");
@@ -449,7 +420,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     /**
      * 下拉加载成功
      */
-    @SuppressWarnings("unused")
     public void setLoadMoreSuccess() {
         if (mFooter == null) {
             Log.i(TAG, "setLoadMoreSuccess: mFooter is null");
@@ -471,7 +441,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         if (mTargetView == null) {
             return;
         }
-
         notifyLoadMoreStatusChanged(IPullToRefreshFooter.STATUS_END);
         requestLayout();
     }
@@ -482,6 +451,93 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
     @SuppressWarnings("unused")
     public void setCustomFooterOrHeaderCount(int count) {
         mCustomFooterOrHeaderCount = count;
+    }
+
+    /**
+     * 状态已经可以进行下拉刷新
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean isAlreadyStatus() {
+        return isEnabled() && isHeaderAlreadyForRefresh() && isFooterAlreadyForRefresh();
+    }
+
+    private boolean isHeaderAlreadyForRefresh() {
+        if (!isRefreshEnable || mHeader == null) {
+            return false;
+        }
+        switch (mHeader.getStatus()) {
+            case IPullToRefreshHeader.STATUS_NORMAL:
+            case IPullToRefreshHeader.STATUS_READY:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private boolean isFooterAlreadyForRefresh() {
+        // 当Footer不存在或者使用的时候那么也可以认为可以进行下拉刷新
+        if (!isLoadMoreEnable || mFooter == null) {
+            return true;
+        }
+        switch (mFooter.getStatus()) {
+            case IPullToRefreshFooter.STATUS_NORMAL:
+            case IPullToRefreshFooter.STATUS_END:
+            case IPullToRefreshFooter.STATUS_FAILED:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private boolean isHeaderAlreadyForLoadMore() {
+        // 当Header不存在或者使用的时候那么也可以认为可以进行加载更多
+        if (!isRefreshEnable || mHeader == null) {
+            return true;
+        }
+        switch (mHeader.getStatus()) {
+            case IPullToRefreshHeader.STATUS_NORMAL:
+            case IPullToRefreshHeader.STATUS_READY:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * 是否可以加载更多
+     */
+    private boolean isCanLoadMore() {
+        if (!isLoadMoreEnable || mFooter == null) {
+            return false;
+        }
+
+        switch (mFooter.getStatus()) {
+            case IPullToRefreshFooter.STATUS_NORMAL:
+            case IPullToRefreshFooter.STATUS_FAILED:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void setRefreshing() {
+        computeStatus();
+        notifyRefresh();
+    }
+
+    private void setLoading() {
+        computeStatus();
+        notifyLoadMore();
+    }
+
+    private void computeStatus() {
+        if (mHeader != null) {
+            mHeaderMovingDistance = mHeader.getMovingDistance();
+        }
+
+        if (mTargetView != null) {
+            mTargetOffsetTop = mTargetView.getTop();
+        }
     }
 
     public void setOnPullToRefreshListener(OnPullToRefreshListener listener) {
@@ -533,84 +589,6 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
 
         if (mPullToRefreshStatusChangedListener != null) {
             mPullToRefreshStatusChangedListener.onLoadMoreStatusChanged(status);
-        }
-    }
-
-    /**
-     * 状态已经可以进行下拉刷新或者上拉加载更多
-     */
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean isAlreadyStatus() {
-        return isEnabled() && isAlreadyHeaderStatus() && isAlreadyFooterStatus();
-    }
-
-    private boolean isAlreadyHeaderStatus() {
-        if (!isRefreshEnable) {
-            return true;
-        }
-        if (mHeader == null) {
-            return true;
-        }
-        final int status = mHeader.getStatus();
-        return status == IPullToRefreshHeader.STATUS_NORMAL || status == IPullToRefreshHeader.STATUS_READY;
-    }
-
-
-    private boolean isAlreadyFooterStatus() {
-        if (!isLoadMoreEnable || mFooter == null) {
-            return true;
-        }
-        switch (mFooter.getStatus()) {
-            case IPullToRefreshFooter.STATUS_NORMAL:
-            case IPullToRefreshFooter.STATUS_END:
-            case IPullToRefreshFooter.STATUS_FAILED:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * 是否可以加载更多
-     */
-    private boolean isCanLoadMore() {
-        if (!isLoadMoreEnable || mFooter == null) {
-            return false;
-        }
-
-        switch (mFooter.getStatus()) {
-            case IPullToRefreshFooter.STATUS_NORMAL:
-            case IPullToRefreshFooter.STATUS_FAILED:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private void setRefreshing() {
-        computeStatus();
-        notifyRefresh();
-    }
-
-    private void setLoading() {
-        computeStatus();
-        notifyLoadMore();
-    }
-
-    private void computeStatus() {
-        if (mHeader != null) {
-            mHeaderMovingDistance = mHeader.getMovingDistance();
-        }
-
-        if (mTargetView != null) {
-            mTargetOffsetTop = mTargetView.getTop();
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (isCanLoadMore() && isAlreadyHeaderStatus()) {
-            setLoading();
         }
     }
 
@@ -674,7 +652,7 @@ public class PullToRefreshView extends ViewGroup implements View.OnClickListener
         @Override
         public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
-            if (!isLoadMoreEnable || !isCanLoadMore() || !isAlreadyHeaderStatus()) {
+            if (!isLoadMoreEnable || !isCanLoadMore() || !isHeaderAlreadyForLoadMore()) {
                 return;
             }
 
