@@ -122,7 +122,6 @@ android {
         // by a similar customization.
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
-
     }
 
     lintOptions {
@@ -148,5 +147,6 @@ dependencies {
     // 基础库
     implementation project(':pulltorefresh')
 
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02")
 }
 

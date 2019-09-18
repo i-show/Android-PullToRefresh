@@ -1,6 +1,7 @@
 package com.ishow.pulltorefresh;
 
 import androidx.annotation.IntDef;
+
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -18,27 +19,19 @@ public interface IPullToRefreshFooter {
      */
     int STATUS_NORMAL = 0;
     /**
-     * 准备状态
-     */
-    int STATUS_READY = 1;
-    /**
      * 加载状态
      */
-    int STATUS_LOADING = 2;
-    /**
-     * 刷新成功
-     */
-    int STATUS_SUCCESS = 3;
+    int STATUS_LOADING = 1;
     /**
      * 刷新失败
      */
-    int STATUS_FAILED = 4;
+    int STATUS_FAILED = 2;
     /**
      * 全部加载完毕
      */
-    int STATUS_END = 5;
+    int STATUS_END = 3;
 
-    @IntDef({STATUS_NORMAL, STATUS_READY, STATUS_LOADING, STATUS_SUCCESS, STATUS_FAILED, STATUS_END})
+    @IntDef({STATUS_NORMAL, STATUS_LOADING, STATUS_FAILED, STATUS_END})
     @Retention(RetentionPolicy.SOURCE)
     @interface status {
     }
@@ -58,48 +51,13 @@ public interface IPullToRefreshFooter {
      */
     int getStatus();
 
-
     /**
-     * 移动
-     *
-     * @param parent 父View
-     * @param total  总共移动了多少距离
-     * @param offset 当前事件移动的距离
-     * @return header移动的距离
+     * 是否可用
      */
-    int moving(ViewGroup parent, View targetView, final int total, final int offset);
-
-    /**
-     * 刷新中....
-     */
-    int loading(ViewGroup parent, View targetView, final int total);
-
-    /**
-     * 取消刷新
-     */
-    int cancelLoadMore(ViewGroup parent, View targetView);
-
-    /**
-     * 加载成功
-     */
-    int loadSuccess(ViewGroup parent);
-
-    /**
-     * 加载失败
-     */
-    int loadFailed(ViewGroup parent);
-
-
-    /**
-     * 判断当前移动距离是否是有效距离
-     */
-    boolean isEffectiveDistance(ViewGroup parent, View targetView, int movingDistance);
-
-
-    /**
-     * 获取上拉的最大高度
-     */
-    int getMaxPullUpHeight();
-
     void setEnabled(boolean enable);
+
+    /**
+     * 设置点击Footer的事件
+     */
+    void setOnClickFooterListener(View.OnClickListener listener);
 }

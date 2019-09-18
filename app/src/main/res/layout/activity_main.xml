@@ -1,25 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+<com.ishow.pulltorefresh.PullToRefreshView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pull2refresh"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-
-    <com.ishow.pulltorefresh.PullToRefreshView
-        android:id="@+id/pulltorefresh"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:autoLoadMoreEnable="false">
+        android:overScrollMode="never"
+        android:text="@string/app_name" />
+</com.ishow.pulltorefresh.PullToRefreshView>
 
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/pull_to_refresh_scroll_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:overScrollMode="never"
-            android:text="@string/app_name" />
-    </com.ishow.pulltorefresh.PullToRefreshView>
-
-
-</LinearLayout>
