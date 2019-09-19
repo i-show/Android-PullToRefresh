@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
-
+// 添加插件
+apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion COMPILE_SDK_VERSION as int
@@ -24,4 +25,12 @@ dependencies {
     api 'androidx.recyclerview:recyclerview:1.0.0'
 }
 
-
+publish {
+    repoName = 'ishow'
+    userOrg = 'brightyu'
+    groupId = 'com.ishow'
+    artifactId = 'pulltorefresh-v1'
+    publishVersion = PROD_VERSION_NAME//版本号
+    desc = 'android-PullToRefresh'
+    website = 'https://github.com/i-show/android-PullToRefresh'
+}
