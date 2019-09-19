@@ -104,7 +104,7 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == TYPE_LOAD_MORE) {
-            mLoadMoreView = mLayoutInflater.inflate(R.layout.pull_to_refresh_footer, parent, false);
+            mLoadMoreView = mLayoutInflater.inflate(R.layout.pull2refresh_footer, parent, false);
             mLoadMoreTextView = mLoadMoreView.findViewById(R.id.pull_to_refresh_footer_text);
             mLoadMoreLoadingView = mLoadMoreView.findViewById(R.id.pull_to_refresh_footer_loading);
             return new ViewHolder(mLoadMoreView);
@@ -206,23 +206,23 @@ public class LoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             case STATUS_NORMAL:
                 mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.setVisibility(View.GONE);
-                mLoadMoreTextView.setText(R.string.pulltorefresh_footer_normal);
+                mLoadMoreTextView.setText(R.string.pull2refresh_footer_normal);
                 break;
             case STATUS_LOADING:
                 mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.startAnimation(mRotateLoading);
                 mLoadMoreLoadingView.setVisibility(View.VISIBLE);
-                mLoadMoreTextView.setText(R.string.pulltorefresh_footer_loading);
+                mLoadMoreTextView.setText(R.string.pull2refresh_footer_loading);
                 break;
             case STATUS_FAILED:
                 mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.setVisibility(View.GONE);
-                mLoadMoreTextView.setText(R.string.pulltorefresh_footer_fail);
+                mLoadMoreTextView.setText(R.string.pull2refresh_footer_fail);
                 break;
             case STATUS_END:
                 mLoadMoreLoadingView.clearAnimation();
                 mLoadMoreLoadingView.setVisibility(View.GONE);
-                mLoadMoreTextView.setText(R.string.pulltorefresh_footer_end);
+                mLoadMoreTextView.setText(R.string.pull2refresh_footer_end);
                 break;
         }
     }

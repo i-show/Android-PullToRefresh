@@ -46,16 +46,16 @@ public class ViewHelper {
             animator.addListener(listener);
         }
         animator.start();
-        view.setTag(R.id.tag_pull_to_refresh_moving_y, 0);
-        view.setTag(R.id.tag_pull_to_refresh_animation, animator);
+        view.setTag(R.id.tag_pull2refresh_moving_y, 0);
+        view.setTag(R.id.tag_pull2refresh_animation, animator);
 
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                final int last = (int) view.getTag(R.id.tag_pull_to_refresh_moving_y);
+                final int last = (int) view.getTag(R.id.tag_pull2refresh_moving_y);
                 final int move = (int) animation.getAnimatedValue();
                 int offset = move - last;
-                view.setTag(R.id.tag_pull_to_refresh_moving_y, move);
+                view.setTag(R.id.tag_pull2refresh_moving_y, move);
                 ViewCompat.offsetTopAndBottom(view, offset);
                 if (listener != null) {
                     listener.onAnimationUpdate(animation);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="tag_pull_to_refresh_moving_y" type="id" />
-    <item name="tag_pull_to_refresh_animation" type="id" />
-    <item name="pull_to_refresh_scroll_view" type="id" />
+    <item name="tag_pull2refresh_moving_y" type="id" />
+    <item name="tag_pull2refresh_animation" type="id" />
+    <item name="pull2refresh_scroll_view" type="id" />
 </resources>

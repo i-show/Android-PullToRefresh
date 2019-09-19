@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="pulltorefresh_classic_header_min_h">60dp</dimen>
-    <dimen name="pulltorefresh_classic_header_image_size">18dp</dimen>
+    <dimen name="pull2refresh_classic_header_min_h">60dp</dimen>
+    <dimen name="pull2refresh_classic_header_image_size">18dp</dimen>
 </resources>
